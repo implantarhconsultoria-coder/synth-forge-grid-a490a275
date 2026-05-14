@@ -1,7 +1,4 @@
 // AI FACTORY — Supabase API layer
-// Wrappers tipados sobre as tabelas existentes. Toda função tolera falha
-// e devolve null para que o factory-data possa cair no fallback mock.
-
 import { supabase } from "./supabase-client";
 
 async function safe<T>(fn: () => Promise<{ data: T | null; error: unknown }>): Promise<T | null> {
@@ -22,7 +19,7 @@ function mapMission(row: any) {
   if (!row) return row;
   return {
     ...row,
-    title: row.title ?? row.titulo ?? row["título"] ?? row.nome ?? "Missão",
+    title: row.title ?? row.titulo ?? row.nome ?? "Missão",
     description: row.description ?? row.objective ?? row.objetivo ?? row.descricao ?? "",
     objective: row.objective ?? row.description ?? row.objetivo ?? row.descricao ?? "",
     status: row.status ?? "open",
@@ -45,10 +42,10 @@ function mapMissionTask(row: any) {
   if (!row) return row;
   return {
     ...row,
-    id: row.id ?? row["eu ia"] ?? crypto.randomUUID(),
-    missionId: row.mission_id ?? row.id_da_missao ?? row["id_da_missão"] ?? null,
+    id: row.id ?? row.titulo_da_tarefa ?? crypto.randomUUID(),
+    missionId: row.mission_id ?? row.id_da_missao ?? null,
     projectName: row.project_name ?? row.nome_do_projeto ?? row.project ?? row.projeto ?? "TOPAC RH PRO",
-    taskTitle: row.task_title ?? row.titulo_da_tarefa ?? row["título_da_tarefa"] ?? row.title ?? row.titulo ?? "Tarefa",
+    taskTitle: row.task_title ?? row.titulo_da_tarefa ?? row.title ?? row.titulo ?? "Tarefa",
     taskType: row.task_type ?? row.tipo_de_tarefa ?? row.type ?? row.tipo ?? "execucao",
     status: row.status ?? "pendente",
     priority: row.priority ?? row.prioridade ?? "alta",
@@ -58,51 +55,43 @@ function mapMissionTask(row: any) {
 }
 
 export const supabaseApi = {
-  // ----- READS -----
-  listProjects: () =>
-    safe(() => supabase.from("projects").select("*").order("created_at", { ascending: false }) as any),
-
-  listSmartLogs: (limit = 50) =>
-    safe(() =>
-      supabase.from("smart_logs").select("*").order("created_at", { ascending: false }).limit(limit) as any,
-    ),
-
+  listProjects: () => safe(() => supabase.from("projects").select("*").order("created_at", { ascending: false }) as any),
+  listSmartLogs: (limit = 50) => safe(() => supabase.from("smart_logs").select("*").order("created_at", { ascending: false }).limit(limit) as any),
   listIntegrations: () => safe(() => supabase.from("integrations").select("*") as any),
-
   listAlerts: () => safe(() => supabase.from("alerts").select("*") as any),
-
-  listCorrections: () =>
-    safe(() => supabase.from("corrections").select("*").order("created_at", { ascending: false }) as any),
-
-  listCommands: () =>
-    safe(() => supabase.from("commands").select("*").order("created_at", { ascending: false }) as any),
+  listCorrections: () => safe(() => supabase.from("corrections").select("*").order("created_at", { ascending: false }) as any),
+  listCommands: () => safe(() => supabase.from("commands").select("*").order("created_at", { ascending: false }) as any),
 
   listMissions: async () => {
-    const rows = await safe<any[]>(() =>
-      supabase.from("ai_missions").select("*").order("created_at", { ascending: false }) as any,
-    );
+    const rows = await safe<any[]>(() => supabase.from("ai_missions").select("*").order("created_at", { ascending: false }) as any);
     return Array.isArray(rows) ? rows.map(mapMission) : rows;
   },
 
   listMissionTasks: async () => {
-    const rows = await safe<any[]>(() =>
-      supabase.from("ai_mission_tasks").select("*") as any,
-    );
+    const rows = await safe<any[]>(() => supabase.from("ai_mission_tasks").select("*") as any);
     return Array.isArray(rows) ? rows.map(mapMissionTask) : rows;
   },
 
-  listMemories: async () => {
-    const rows = await safe<any[]>(() =>
-      supabase.from("ai_memory").select("*").order("created_at", { ascending: false }) as any,
+  updateMissionTaskStatus: async (taskTitle: string, status: string) => {
+    const row = await safe<any>(() =>
+      supabase
+        .from("ai_mission_tasks")
+        .update({ status })
+        .eq("titulo_da_tarefa", taskTitle)
+        .select("*")
+        .single() as any,
     );
+    return mapMissionTask(row);
+  },
+
+  listMemories: async () => {
+    const rows = await safe<any[]>(() => supabase.from("ai_memory").select("*").order("created_at", { ascending: false }) as any);
     return Array.isArray(rows) ? rows.map(mapMemory) : rows;
   },
 
   getDashboardSummary: () => safe(() => supabase.from("dashboard_summary").select("*").limit(1).maybeSingle() as any),
 
-  // ----- WRITES -----
-  insertProject: (payload: Record<string, unknown>) =>
-    safe(() => supabase.from("projects").insert(payload).select().single() as any),
+  insertProject: (payload: Record<string, unknown>) => safe(() => supabase.from("projects").insert(payload).select().single() as any),
 
   insertMission: async (payload: Record<string, unknown>) => {
     const dbPayload = {
@@ -111,7 +100,6 @@ export const supabaseApi = {
       status: payload.status ?? "open",
       priority: payload.priority ?? payload.prioridade ?? "critical",
     };
-
     const row = await safe<any>(() => supabase.from("ai_missions").insert(dbPayload).select().single() as any);
     return mapMission(row);
   },
@@ -122,11 +110,9 @@ export const supabaseApi = {
       memory_key: payload.key ?? payload.memory_key ?? "memo",
       memory_value: payload.value ?? payload.memory_value ?? "",
     };
-
     const row = await safe<any>(() => supabase.from("ai_memory").insert(dbPayload).select().single() as any);
     return mapMemory(row);
   },
 
-  insertSmartLog: (payload: Record<string, unknown>) =>
-    safe(() => supabase.from("smart_logs").insert(payload).select().single() as any),
+  insertSmartLog: (payload: Record<string, unknown>) => safe(() => supabase.from("smart_logs").insert(payload).select().single() as any),
 };
