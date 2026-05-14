@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { factoryData } from "@/lib/factory-data";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { ArrowUpRight, Activity, Cpu, Zap, Radio } from "lucide-react";
 

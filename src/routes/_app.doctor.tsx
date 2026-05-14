@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { factoryData } from "@/lib/factory-data";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Stethoscope, ShieldAlert, Wrench, Activity, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";

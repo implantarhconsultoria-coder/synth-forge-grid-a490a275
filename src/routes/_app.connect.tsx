@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { factoryData } from "@/lib/factory-data";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Cable, CheckCircle2, RefreshCw, AlertTriangle, PowerOff } from "lucide-react";
 
