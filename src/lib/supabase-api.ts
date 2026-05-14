@@ -41,6 +41,22 @@ function mapMemory(row: any) {
   };
 }
 
+function mapMissionTask(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    id: row.id,
+    missionId: row.mission_id ?? null,
+    projectName: row.project_name ?? row.project ?? row.projeto ?? "TOPAC RH PRO",
+    taskTitle: row.task_title ?? row.title ?? row.titulo ?? "Tarefa",
+    taskType: row.task_type ?? row.type ?? row.tipo ?? "execucao",
+    status: row.status ?? "pendente",
+    priority: row.priority ?? row.prioridade ?? "alta",
+    notes: row.notes ?? row.observacoes ?? "",
+    createdAt: row.created_at ?? new Date().toISOString(),
+  };
+}
+
 export const supabaseApi = {
   // ----- READS -----
   listProjects: () =>
@@ -66,6 +82,13 @@ export const supabaseApi = {
       supabase.from("ai_missions").select("*").order("created_at", { ascending: false }) as any,
     );
     return Array.isArray(rows) ? rows.map(mapMission) : rows;
+  },
+
+  listMissionTasks: async () => {
+    const rows = await safe<any[]>(() =>
+      supabase.from("ai_mission_tasks").select("*").order("created_at", { ascending: true }) as any,
+    );
+    return Array.isArray(rows) ? rows.map(mapMissionTask) : rows;
   },
 
   listMemories: async () => {
