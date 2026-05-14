@@ -22,7 +22,7 @@ function mapMission(row: any) {
   if (!row) return row;
   return {
     ...row,
-    title: row.title ?? row.titulo ?? row.nome ?? "Missão",
+    title: row.title ?? row.titulo ?? row["título"] ?? row.nome ?? "Missão",
     description: row.description ?? row.objective ?? row.objetivo ?? row.descricao ?? "",
     objective: row.objective ?? row.description ?? row.objetivo ?? row.descricao ?? "",
     status: row.status ?? "open",
@@ -45,15 +45,15 @@ function mapMissionTask(row: any) {
   if (!row) return row;
   return {
     ...row,
-    id: row.id,
-    missionId: row.mission_id ?? null,
-    projectName: row.project_name ?? row.project ?? row.projeto ?? "TOPAC RH PRO",
-    taskTitle: row.task_title ?? row.title ?? row.titulo ?? "Tarefa",
-    taskType: row.task_type ?? row.type ?? row.tipo ?? "execucao",
+    id: row.id ?? row["eu ia"] ?? crypto.randomUUID(),
+    missionId: row.mission_id ?? row.id_da_missao ?? row["id_da_missão"] ?? null,
+    projectName: row.project_name ?? row.nome_do_projeto ?? row.project ?? row.projeto ?? "TOPAC RH PRO",
+    taskTitle: row.task_title ?? row.titulo_da_tarefa ?? row["título_da_tarefa"] ?? row.title ?? row.titulo ?? "Tarefa",
+    taskType: row.task_type ?? row.tipo_de_tarefa ?? row.type ?? row.tipo ?? "execucao",
     status: row.status ?? "pendente",
     priority: row.priority ?? row.prioridade ?? "alta",
-    notes: row.notes ?? row.observacoes ?? "",
-    createdAt: row.created_at ?? new Date().toISOString(),
+    notes: row.notes ?? row.notas ?? row.observacoes ?? "",
+    createdAt: row.created_at ?? row.criado_em ?? new Date().toISOString(),
   };
 }
 
@@ -86,7 +86,7 @@ export const supabaseApi = {
 
   listMissionTasks: async () => {
     const rows = await safe<any[]>(() =>
-      supabase.from("ai_mission_tasks").select("*").order("created_at", { ascending: true }) as any,
+      supabase.from("ai_mission_tasks").select("*") as any,
     );
     return Array.isArray(rows) ? rows.map(mapMissionTask) : rows;
   },
