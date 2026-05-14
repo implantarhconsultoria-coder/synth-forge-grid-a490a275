@@ -10,8 +10,10 @@ import {
   Settings,
   Activity,
   Sparkles,
+  Brain,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 
 const NAV = [
   { to: "/", label: "Command Center", icon: LayoutDashboard },
@@ -20,6 +22,7 @@ const NAV = [
   { to: "/doctor", label: "Doctor", icon: Stethoscope },
   { to: "/connect", label: "Connect", icon: Cable },
   { to: "/voice", label: "Voice Command", icon: Mic },
+  { to: "/admin", label: "Núcleo Factory", icon: Brain },
   { to: "/private", label: "Private Mode", icon: Lock },
   { to: "/settings", label: "Configurações", icon: Settings },
 ] as const;
