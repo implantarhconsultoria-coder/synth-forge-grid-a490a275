@@ -16,6 +16,7 @@ const logColor: Record<string, string> = {
 };
 
 function CommandCenter() {
+  useFactoryData();
   const [tick, setTick] = useState(0);
   const stats = factoryData.getStats();
   const logs = factoryData.getLogs().slice(0, 12);
