@@ -23,7 +23,8 @@ function mapMission(row: any) {
   return {
     ...row,
     title: row.title ?? row.titulo ?? row.nome ?? "Missão",
-    description: row.description ?? row.objetivo ?? row.descricao ?? "",
+    description: row.description ?? row.objective ?? row.objetivo ?? row.descricao ?? "",
+    objective: row.objective ?? row.description ?? row.objetivo ?? row.descricao ?? "",
     status: row.status ?? "open",
     priority: row.priority ?? row.prioridade ?? "medium",
     created_at: row.created_at ?? row.criado_em ?? new Date().toISOString(),
@@ -82,10 +83,10 @@ export const supabaseApi = {
 
   insertMission: async (payload: Record<string, unknown>) => {
     const dbPayload = {
-      titulo: payload.title ?? payload.titulo ?? "Missão",
-      objetivo: payload.description ?? payload.objective ?? payload.objetivo ?? "",
+      title: payload.title ?? payload.titulo ?? "Missão",
+      objective: payload.description ?? payload.objective ?? payload.objetivo ?? "",
       status: payload.status ?? "open",
-      prioridade: payload.priority ?? payload.prioridade ?? "critical",
+      priority: payload.priority ?? payload.prioridade ?? "critical",
     };
 
     const row = await safe<any>(() => supabase.from("ai_missions").insert(dbPayload).select().single() as any);
