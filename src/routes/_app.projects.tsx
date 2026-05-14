@@ -18,6 +18,7 @@ const statusStyles = {
 } as const;
 
 function ProjectsPage() {
+  useFactoryData();
   const [open, setOpen] = useState<Project | null>(null);
   const [, force] = useState(0);
   const projects = factoryData.getProjects();
