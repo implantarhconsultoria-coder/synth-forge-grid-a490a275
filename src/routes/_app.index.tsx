@@ -91,7 +91,7 @@ function CommandCenter() {
             <div className="relative">
               <div className="flex items-center justify-between">
                 <div className="text-xs uppercase tracking-wider text-muted-foreground">{c.label}</div>
-                <SourceBadge source="mock" />
+                <SourceBadge source={factoryData.source} />
               </div>
               <div className="mt-2 text-3xl font-semibold font-mono">{c.value}</div>
               <div className={`mt-1 text-xs ${toneClass[c.tone].split(" ").pop()}`}>{c.delta}</div>
@@ -106,7 +106,7 @@ function CommandCenter() {
             <div className="flex items-center gap-2 text-sm">
               <Activity className="size-4 text-primary" />
               <span className="font-medium">Logs inteligentes · tempo real</span>
-              <SourceBadge source="mock" className="ml-2" />
+              <SourceBadge source={factoryData.source} className="ml-2" />
             </div>
             <span className="text-xs text-muted-foreground font-mono">stream://core</span>
           </div>
@@ -129,7 +129,7 @@ function CommandCenter() {
               <div className="text-sm font-medium">Núcleo IA</div>
               <div className="text-xs text-muted-foreground">Saúde dos subsistemas</div>
             </div>
-            <SourceBadge source="mock" />
+            <SourceBadge source={factoryData.source} />
           </div>
           <div className="mt-5 space-y-4">
             {[

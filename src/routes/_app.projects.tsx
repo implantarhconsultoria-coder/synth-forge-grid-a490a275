@@ -60,7 +60,7 @@ function ProjectsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Projetos</h1>
           <p className="text-muted-foreground mt-1">Ecossistema operacional sob comando do núcleo IA.</p>
         </div>
-        <SourceBadge source="mock" />
+        <SourceBadge source={factoryData.source} />
       </header>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
