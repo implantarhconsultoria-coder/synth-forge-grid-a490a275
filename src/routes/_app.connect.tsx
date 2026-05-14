@@ -15,6 +15,7 @@ const statusMap = {
 } as const;
 
 function ConnectPage() {
+  useFactoryData();
   const integrations = factoryData.getIntegrations();
   return (
     <div className="space-y-8">
