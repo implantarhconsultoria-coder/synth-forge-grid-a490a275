@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Outlet,
@@ -10,6 +11,7 @@ import {
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
+import { factoryData } from "@/lib/factory-data";
 
 function NotFoundComponent() {
   return (
@@ -86,10 +88,19 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+function FactoryHydrator() {
+  useEffect(() => {
+    void factoryData.hydrate();
+  }, []);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
+      <FactoryHydrator />
       <Outlet />
       <Toaster />
     </QueryClientProvider>
