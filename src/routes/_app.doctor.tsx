@@ -17,6 +17,7 @@ const sevStyle: Record<string, string> = {
 };
 
 function DoctorPage() {
+  useFactoryData();
   const [, force] = useState(0);
   const alerts = factoryData.getAlerts();
   const corrections = factoryData.getCorrections();
