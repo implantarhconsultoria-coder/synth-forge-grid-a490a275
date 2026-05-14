@@ -18,6 +18,28 @@ async function safe<T>(fn: () => Promise<{ data: T | null; error: unknown }>): P
   }
 }
 
+function mapMission(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    title: row.title ?? row.titulo ?? row.nome ?? "Missão",
+    description: row.description ?? row.objetivo ?? row.descricao ?? "",
+    status: row.status ?? "open",
+    priority: row.priority ?? row.prioridade ?? "medium",
+    created_at: row.created_at ?? row.criado_em ?? new Date().toISOString(),
+  };
+}
+
+function mapMemory(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    key: row.key ?? row.memory_key ?? row.chave ?? row.module ?? row.modulo ?? "memo",
+    value: row.value ?? row.memory_value ?? row.valor ?? row.conteudo ?? "",
+    created_at: row.created_at ?? row.criado_em ?? new Date().toISOString(),
+  };
+}
+
 export const supabaseApi = {
   // ----- READS -----
   listProjects: () =>
@@ -38,11 +60,19 @@ export const supabaseApi = {
   listCommands: () =>
     safe(() => supabase.from("commands").select("*").order("created_at", { ascending: false }) as any),
 
-  listMissions: () =>
-    safe(() => supabase.from("ai_missions").select("*").order("created_at", { ascending: false }) as any),
+  listMissions: async () => {
+    const rows = await safe<any[]>(() =>
+      supabase.from("ai_missions").select("*").order("created_at", { ascending: false }) as any,
+    );
+    return Array.isArray(rows) ? rows.map(mapMission) : rows;
+  },
 
-  listMemories: () =>
-    safe(() => supabase.from("ai_memory").select("*").order("created_at", { ascending: false }) as any),
+  listMemories: async () => {
+    const rows = await safe<any[]>(() =>
+      supabase.from("ai_memory").select("*").order("created_at", { ascending: false }) as any,
+    );
+    return Array.isArray(rows) ? rows.map(mapMemory) : rows;
+  },
 
   getDashboardSummary: () => safe(() => supabase.from("dashboard_summary").select("*").limit(1).maybeSingle() as any),
 
@@ -50,11 +80,28 @@ export const supabaseApi = {
   insertProject: (payload: Record<string, unknown>) =>
     safe(() => supabase.from("projects").insert(payload).select().single() as any),
 
-  insertMission: (payload: Record<string, unknown>) =>
-    safe(() => supabase.from("ai_missions").insert(payload).select().single() as any),
+  insertMission: async (payload: Record<string, unknown>) => {
+    const dbPayload = {
+      titulo: payload.title ?? payload.titulo ?? "Missão",
+      objetivo: payload.description ?? payload.objective ?? payload.objetivo ?? "",
+      status: payload.status ?? "open",
+      prioridade: payload.priority ?? payload.prioridade ?? "critical",
+    };
 
-  insertMemory: (payload: Record<string, unknown>) =>
-    safe(() => supabase.from("ai_memory").insert(payload).select().single() as any),
+    const row = await safe<any>(() => supabase.from("ai_missions").insert(dbPayload).select().single() as any);
+    return mapMission(row);
+  },
+
+  insertMemory: async (payload: Record<string, unknown>) => {
+    const dbPayload = {
+      module: payload.module ?? "factory_admin",
+      memory_key: payload.key ?? payload.memory_key ?? "memo",
+      memory_value: payload.value ?? payload.memory_value ?? "",
+    };
+
+    const row = await safe<any>(() => supabase.from("ai_memory").insert(dbPayload).select().single() as any);
+    return mapMemory(row);
+  },
 
   insertSmartLog: (payload: Record<string, unknown>) =>
     safe(() => supabase.from("smart_logs").insert(payload).select().single() as any),
