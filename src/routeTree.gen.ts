@@ -18,6 +18,7 @@ import { Route as AppPrivateRouteImport } from './routes/_app.private'
 import { Route as AppForgeRouteImport } from './routes/_app.forge'
 import { Route as AppDoctorRouteImport } from './routes/_app.doctor'
 import { Route as AppConnectRouteImport } from './routes/_app.connect'
+import { Route as AppAdminRouteImport } from './routes/_app.admin'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -63,9 +64,15 @@ const AppConnectRoute = AppConnectRouteImport.update({
   path: '/connect',
   getParentRoute: () => AppRoute,
 } as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
+  '/admin': typeof AppAdminRoute
   '/connect': typeof AppConnectRoute
   '/doctor': typeof AppDoctorRoute
   '/forge': typeof AppForgeRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/voice': typeof AppVoiceRoute
 }
 export interface FileRoutesByTo {
+  '/admin': typeof AppAdminRoute
   '/connect': typeof AppConnectRoute
   '/doctor': typeof AppDoctorRoute
   '/forge': typeof AppForgeRoute
@@ -87,6 +95,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_app': typeof AppRouteWithChildren
+  '/_app/admin': typeof AppAdminRoute
   '/_app/connect': typeof AppConnectRoute
   '/_app/doctor': typeof AppDoctorRoute
   '/_app/forge': typeof AppForgeRoute
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/connect'
     | '/doctor'
     | '/forge'
@@ -109,6 +119,7 @@ export interface FileRouteTypes {
     | '/voice'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/admin'
     | '/connect'
     | '/doctor'
     | '/forge'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/_app'
+    | '/_app/admin'
     | '/_app/connect'
     | '/_app/doctor'
     | '/_app/forge'
@@ -199,10 +211,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppConnectRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/admin': {
+      id: '/_app/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
   AppConnectRoute: typeof AppConnectRoute
   AppDoctorRoute: typeof AppDoctorRoute
   AppForgeRoute: typeof AppForgeRoute
@@ -214,6 +234,7 @@ interface AppRouteChildren {
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
   AppConnectRoute: AppConnectRoute,
   AppDoctorRoute: AppDoctorRoute,
   AppForgeRoute: AppForgeRoute,
