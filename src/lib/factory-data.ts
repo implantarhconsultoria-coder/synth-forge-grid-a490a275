@@ -247,7 +247,9 @@ const state = {
 };
 
 const listeners = new Set<() => void>();
+let version = 0;
 function emit() {
+  version++;
   listeners.forEach((l) => l());
 }
 
