@@ -1,9 +1,11 @@
 // AI FACTORY — central data service
-// Estrutura preparada para futura conexão Supabase/API.
-// Hoje: mock local + persistência em localStorage para histórico de ações.
+// Estratégia: tenta hidratar do Supabase; em falha/vazio mantém o mock local.
+// API permanece sincrona para os componentes existentes.
+
+import { useSyncExternalStore } from "react";
+import { supabaseApi } from "./supabase-api";
 
 export type DataSource = "mock" | "real";
-
 export type ProjectStatus = "online" | "build" | "alert" | "offline";
 
 export interface Project {
@@ -15,7 +17,7 @@ export interface Project {
   source: DataSource;
   isPrivate: boolean;
   isExternal: boolean;
-  lastUpdate: string; // ISO
+  lastUpdate: string;
   description: string;
 }
 
@@ -71,10 +73,32 @@ export interface CommandRecord {
   source: DataSource;
 }
 
-// ---------- Mock seed ----------
+export interface Mission {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  createdAt: string;
+  source: DataSource;
+}
+
+export interface MemoryEntry {
+  id: string;
+  key: string;
+  value: string;
+  createdAt: string;
+  source: DataSource;
+}
+
+// ---------- helpers ----------
 
 const now = () => new Date().toISOString();
 const uid = () => Math.random().toString(36).slice(2, 10);
+const str = (v: unknown, fb = "") => (typeof v === "string" ? v : v == null ? fb : String(v));
+const num = (v: unknown, fb = 0) => (typeof v === "number" ? v : Number(v) || fb);
+const bool = (v: unknown) => v === true || v === "true";
+
+// ---------- Mock seed ----------
 
 const seedProjects: Project[] = [
   { id: "topac", name: "TOPAC RH", category: "Recursos Humanos", status: "online", progress: 92, source: "mock", isPrivate: false, isExternal: false, lastUpdate: now(), description: "Plataforma operacional de RH" },
@@ -115,7 +139,71 @@ const seedCorrections: Correction[] = [
   { id: uid(), projectId: "pulzr", title: "Reiniciar worker de métricas", description: "Worker travado em loop", status: "suggested", riskLevel: "medium", requiresApproval: true, createdAt: now(), source: "mock" },
 ];
 
-const seedCommands: CommandRecord[] = [];
+// ---------- normalizers ----------
+
+function normalizeProject(r: any): Project {
+  const status = (["online", "build", "alert", "offline"].includes(r?.status) ? r.status : "online") as ProjectStatus;
+  return {
+    id: str(r?.id ?? r?.uuid ?? uid()),
+    name: str(r?.name ?? r?.title ?? "Projeto"),
+    category: str(r?.category ?? r?.type ?? "Geral"),
+    status,
+    progress: Math.min(100, Math.max(0, num(r?.progress, 0))),
+    source: "real",
+    isPrivate: bool(r?.is_private ?? r?.isPrivate),
+    isExternal: bool(r?.is_external ?? r?.isExternal),
+    lastUpdate: str(r?.updated_at ?? r?.created_at ?? r?.last_update, now()),
+    description: str(r?.description ?? ""),
+  };
+}
+
+function normalizeLog(r: any): SmartLog {
+  const level = (["info", "ok", "warn", "error"].includes(r?.level) ? r.level : "info") as SmartLog["level"];
+  const type = (["system", "monitor", "forge", "doctor", "connect", "voice"].includes(r?.type) ? r.type : "system") as SmartLog["type"];
+  return {
+    id: str(r?.id ?? uid()),
+    projectId: r?.project_id ?? r?.projectId ?? null,
+    type,
+    level,
+    message: str(r?.message ?? r?.text ?? ""),
+    createdAt: str(r?.created_at ?? r?.createdAt, now()),
+    source: "real",
+  };
+}
+
+function normalizeIntegration(r: any): Integration {
+  const status = (["connected", "syncing", "warning", "offline"].includes(r?.status) ? r.status : "connected") as Integration["status"];
+  return {
+    id: str(r?.id ?? uid()),
+    name: str(r?.name ?? r?.provider ?? "Integração"),
+    provider: str(r?.provider ?? "custom"),
+    status,
+    lastSync: str(r?.last_sync ?? r?.updated_at ?? r?.created_at, now()),
+    errorMessage: r?.error_message ?? null,
+    source: "real",
+  };
+}
+
+function normalizeMission(r: any): Mission {
+  return {
+    id: str(r?.id ?? uid()),
+    title: str(r?.title ?? r?.name ?? "Missão"),
+    description: str(r?.description ?? ""),
+    status: str(r?.status ?? "open"),
+    createdAt: str(r?.created_at, now()),
+    source: "real",
+  };
+}
+
+function normalizeMemory(r: any): MemoryEntry {
+  return {
+    id: str(r?.id ?? uid()),
+    key: str(r?.key ?? r?.label ?? "memo"),
+    value: str(r?.value ?? r?.content ?? ""),
+    createdAt: str(r?.created_at, now()),
+    source: "real",
+  };
+}
 
 // ---------- Persistência local ----------
 
@@ -143,52 +231,117 @@ function writeLS<T>(key: string, value: T[]) {
   }
 }
 
+// ---------- Estado interno ----------
+
+const state = {
+  projects: [...seedProjects],
+  logs: [...seedLogs],
+  integrations: [...seedIntegrations],
+  alerts: [...seedAlerts],
+  corrections: [...seedCorrections],
+  missions: [] as Mission[],
+  memories: [] as MemoryEntry[],
+  summary: null as Record<string, unknown> | null,
+  source: "mock" as DataSource,
+  hydrated: false,
+};
+
+const listeners = new Set<() => void>();
+function emit() {
+  listeners.forEach((l) => l());
+}
+
 // ---------- Service ----------
 
 export const factoryData = {
-  source: "mock" as DataSource, // troque para "real" quando conectar API
+  get source() {
+    return state.source;
+  },
 
-  // Reads (mock + local)
+  // Reads (sincronos)
   getProjects(): Project[] {
-    return seedProjects;
+    return state.projects;
   },
   getProject(id: string): Project | undefined {
-    return seedProjects.find((p) => p.id === id);
+    return state.projects.find((p) => p.id === id);
   },
   getIntegrations(): Integration[] {
-    return seedIntegrations;
+    return state.integrations;
   },
   getAlerts(): Alert[] {
-    return seedAlerts;
+    return state.alerts;
   },
   getCorrections(): Correction[] {
-    return [...readLS<Correction>(LS_KEYS.corrections), ...seedCorrections];
+    return [...readLS<Correction>(LS_KEYS.corrections), ...state.corrections];
   },
   getLogs(): SmartLog[] {
-    return [...readLS<SmartLog>(LS_KEYS.logs), ...seedLogs];
+    return [...readLS<SmartLog>(LS_KEYS.logs), ...state.logs];
   },
   getCommands(): CommandRecord[] {
-    return [...readLS<CommandRecord>(LS_KEYS.commands), ...seedCommands];
+    return readLS<CommandRecord>(LS_KEYS.commands);
+  },
+  getMissions(): Mission[] {
+    return state.missions;
+  },
+  getMemories(): MemoryEntry[] {
+    return state.memories;
+  },
+  getSummary(): Record<string, unknown> | null {
+    return state.summary;
   },
 
-  // Stats (derivadas)
   getStats() {
-    const projects = this.getProjects();
-    const integrations = this.getIntegrations();
-    const alerts = this.getAlerts();
+    const projects = state.projects;
+    const integrations = state.integrations;
+    const alerts = state.alerts;
+    const summary = state.summary as any;
     return {
-      projectsConnected: projects.length,
-      projectsOnline: projects.filter((p) => p.status === "online").length,
-      corrections: this.getCorrections().length,
-      alertsActive: alerts.filter((a) => a.status !== "resolved").length,
-      alertsCritical: alerts.filter((a) => a.severity === "critical").length,
-      apisConnected: integrations.length,
-      apisSyncing: integrations.filter((i) => i.status === "syncing").length,
-      monitored: projects.length + integrations.length,
+      projectsConnected: num(summary?.projects_connected, projects.length),
+      projectsOnline: num(summary?.projects_online, projects.filter((p) => p.status === "online").length),
+      corrections: num(summary?.corrections, this.getCorrections().length),
+      alertsActive: num(summary?.alerts_active, alerts.filter((a) => a.status !== "resolved").length),
+      alertsCritical: num(summary?.alerts_critical, alerts.filter((a) => a.severity === "critical").length),
+      apisConnected: num(summary?.apis_connected, integrations.length),
+      apisSyncing: num(summary?.apis_syncing, integrations.filter((i) => i.status === "syncing").length),
+      monitored: num(summary?.monitored, projects.length + integrations.length),
     };
   },
 
-  // Writes (localStorage)
+  // ---------- Hydration ----------
+  async hydrate() {
+    if (state.hydrated) return;
+    state.hydrated = true;
+    const [projects, logs, integrations, missions, memories, summary] = await Promise.all([
+      supabaseApi.listProjects(),
+      supabaseApi.listSmartLogs(50),
+      supabaseApi.listIntegrations(),
+      supabaseApi.listMissions(),
+      supabaseApi.listMemories(),
+      supabaseApi.getDashboardSummary(),
+    ]);
+
+    let realCount = 0;
+    if (Array.isArray(projects) && projects.length) {
+      state.projects = projects.map(normalizeProject);
+      realCount++;
+    }
+    if (Array.isArray(logs) && logs.length) {
+      state.logs = logs.map(normalizeLog);
+      realCount++;
+    }
+    if (Array.isArray(integrations) && integrations.length) {
+      state.integrations = integrations.map(normalizeIntegration);
+      realCount++;
+    }
+    if (Array.isArray(missions)) state.missions = missions.map(normalizeMission);
+    if (Array.isArray(memories)) state.memories = memories.map(normalizeMemory);
+    if (summary && typeof summary === "object") state.summary = summary as Record<string, unknown>;
+
+    if (realCount > 0) state.source = "real";
+    emit();
+  },
+
+  // Writes
   addLog(input: Partial<SmartLog> & { message: string }): SmartLog {
     const log: SmartLog = {
       id: uid(),
@@ -201,6 +354,14 @@ export const factoryData = {
     };
     const list = readLS<SmartLog>(LS_KEYS.logs);
     writeLS(LS_KEYS.logs, [log, ...list]);
+    // tentativa silenciosa de persistir no Supabase
+    void supabaseApi.insertSmartLog({
+      message: log.message,
+      level: log.level,
+      type: log.type,
+      project_id: log.projectId,
+    });
+    emit();
     return log;
   },
   addCorrection(input: Partial<Correction> & { projectId: string; title: string }): Correction {
@@ -234,8 +395,103 @@ export const factoryData = {
     this.addLog({ type: "voice", level: "info", message: `Comando registrado: ${cmd.commandText}` });
     return cmd;
   },
+
+  async createProject(payload: { name: string; category?: string; description?: string }) {
+    const inserted = await supabaseApi.insertProject({
+      name: payload.name,
+      category: payload.category ?? "Geral",
+      description: payload.description ?? "",
+      status: "online",
+      progress: 0,
+    });
+    if (inserted) {
+      const p = normalizeProject(inserted);
+      state.projects = [p, ...state.projects];
+      emit();
+      return p;
+    }
+    // fallback local
+    const p: Project = {
+      id: uid(),
+      name: payload.name,
+      category: payload.category ?? "Geral",
+      description: payload.description ?? "",
+      status: "online",
+      progress: 0,
+      source: "mock",
+      isPrivate: false,
+      isExternal: false,
+      lastUpdate: now(),
+    };
+    state.projects = [p, ...state.projects];
+    emit();
+    return p;
+  },
+
+  async createMission(payload: { title: string; description?: string }) {
+    const inserted = await supabaseApi.insertMission({
+      title: payload.title,
+      description: payload.description ?? "",
+      status: "open",
+    });
+    if (inserted) {
+      const m = normalizeMission(inserted);
+      state.missions = [m, ...state.missions];
+      emit();
+      return m;
+    }
+    const m: Mission = {
+      id: uid(),
+      title: payload.title,
+      description: payload.description ?? "",
+      status: "open",
+      createdAt: now(),
+      source: "mock",
+    };
+    state.missions = [m, ...state.missions];
+    emit();
+    return m;
+  },
+
+  async saveMemory(payload: { key: string; value: string }) {
+    const inserted = await supabaseApi.insertMemory({ key: payload.key, value: payload.value });
+    if (inserted) {
+      const m = normalizeMemory(inserted);
+      state.memories = [m, ...state.memories];
+      emit();
+      return m;
+    }
+    const m: MemoryEntry = {
+      id: uid(),
+      key: payload.key,
+      value: payload.value,
+      createdAt: now(),
+      source: "mock",
+    };
+    state.memories = [m, ...state.memories];
+    emit();
+    return m;
+  },
+
+  subscribe(fn: () => void) {
+    listeners.add(fn);
+    return () => listeners.delete(fn);
+  },
 };
 
 export function sourceLabel(src: DataSource) {
   return src === "real" ? "Real" : "Simulado";
+}
+
+// Hook para forçar rerender quando o store muda.
+let version = 0;
+factoryData.subscribe(() => {
+  version++;
+});
+export function useFactoryData() {
+  return useSyncExternalStore(
+    (cb) => factoryData.subscribe(cb),
+    () => version,
+    () => version,
+  );
 }
