@@ -30,6 +30,10 @@ const NAV = [
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  useFactoryData();
+  useEffect(() => {
+    void factoryData.hydrate();
+  }, []);
 
   return (
     <div className="min-h-screen flex w-full">
