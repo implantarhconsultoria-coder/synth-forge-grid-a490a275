@@ -486,10 +486,6 @@ export function sourceLabel(src: DataSource) {
 }
 
 // Hook para forçar rerender quando o store muda.
-let version = 0;
-factoryData.subscribe(() => {
-  version++;
-});
 export function useFactoryData() {
   return useSyncExternalStore(
     (cb) => factoryData.subscribe(cb),
@@ -497,3 +493,4 @@ export function useFactoryData() {
     () => version,
   );
 }
+
