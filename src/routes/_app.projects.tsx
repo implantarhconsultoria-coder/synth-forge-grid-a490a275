@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { factoryData, type Project } from "@/lib/factory-data";
+import { factoryData, useFactoryData, type Project } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -18,6 +18,7 @@ const statusStyles = {
 } as const;
 
 function ProjectsPage() {
+  useFactoryData();
   const [open, setOpen] = useState<Project | null>(null);
   const [, force] = useState(0);
   const projects = factoryData.getProjects();
@@ -60,7 +61,7 @@ function ProjectsPage() {
           <h1 className="text-3xl font-bold tracking-tight">Projetos</h1>
           <p className="text-muted-foreground mt-1">Ecossistema operacional sob comando do núcleo IA.</p>
         </div>
-        <SourceBadge source="mock" />
+        <SourceBadge source={factoryData.source} />
       </header>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">

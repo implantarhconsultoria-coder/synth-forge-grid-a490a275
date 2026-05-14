@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { factoryData } from "@/lib/factory-data";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Stethoscope, ShieldAlert, Wrench, Activity, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
@@ -17,6 +17,7 @@ const sevStyle: Record<string, string> = {
 };
 
 function DoctorPage() {
+  useFactoryData();
   const [, force] = useState(0);
   const alerts = factoryData.getAlerts();
   const corrections = factoryData.getCorrections();
@@ -48,7 +49,7 @@ function DoctorPage() {
             Detecta, sugere e aplica correções nos projetos do ecossistema.
           </p>
         </div>
-        <SourceBadge source="mock" />
+        <SourceBadge source={factoryData.source} />
       </header>
 
       <section className="grid md:grid-cols-4 gap-4">
@@ -67,7 +68,7 @@ function DoctorPage() {
       <section className="rounded-xl glass overflow-hidden">
         <div className="px-5 py-3 border-b border-border/60 text-sm font-medium flex items-center justify-between">
           <span>Alertas detectados</span>
-          <SourceBadge source="mock" />
+          <SourceBadge source={factoryData.source} />
         </div>
         <ul className="divide-y divide-border/40">
           {alerts.map((a) => {

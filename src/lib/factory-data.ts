@@ -482,7 +482,7 @@ export const factoryData = {
 };
 
 export function sourceLabel(src: DataSource) {
-  return src === "real" ? "Real" : "Simulado";
+  return src === "real" ? "Supabase" : "Simulado";
 }
 
 // Hook para forçar rerender quando o store muda.

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { factoryData } from "@/lib/factory-data";
+import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Cable, CheckCircle2, RefreshCw, AlertTriangle, PowerOff } from "lucide-react";
 
@@ -15,6 +15,7 @@ const statusMap = {
 } as const;
 
 function ConnectPage() {
+  useFactoryData();
   const integrations = factoryData.getIntegrations();
   return (
     <div className="space-y-8">
@@ -26,7 +27,7 @@ function ConnectPage() {
           <h1 className="mt-3 text-3xl font-bold tracking-tight">Integrações</h1>
           <p className="text-muted-foreground mt-1">Conexões ativas entre o núcleo IA e ecossistemas externos.</p>
         </div>
-        <SourceBadge source="mock" />
+        <SourceBadge source={factoryData.source} />
       </header>
 
       <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
