@@ -1,0 +1,5 @@
+{
+  "summary": "Auditoria inicial do projeto TOPAC RH PRO identificou ausência dos arquivos principais src/App.tsx e src/main.tsx. Mapeamento de rotas, módulos, Supabase, GitHub e fluxo atual não possível sem estas referências.",
+  "risk": "medio",
+  "files": []
+}

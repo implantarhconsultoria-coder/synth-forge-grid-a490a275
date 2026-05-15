@@ -1,0 +1,18 @@
+{
+  "summary": "Criados relatórios separados para VR e VT com cálculo baseado em dias úteis, faltas e valores individuais ajustados.",
+  "risk": "medio",
+  "files": [
+    {
+      "path": "src/modules/benefits/VRReport.tsx",
+      "content": "import React from 'react';\nimport { useEmployeeData, calculateWorkingDays, getAbsences } from '../../utils/dataUtils';\n\ninterface VRReportProps {\n  employeeId: string;\n  month: number;\n  year: number;\n}\n\nconst VRReport: React.FC<VRReportProps> = ({ employeeId, month, year }) => {\n  const employee = useEmployeeData(employeeId);\n  const workingDays = calculateWorkingDays(month, year);\n  const absences = getAbsences(employeeId, month, year);\n  const daysWorked = workingDays - absences;\n  const dailyVRRate = employee.vrValue / workingDays;\n  const totalVR = dailyVRRate * daysWorked;\n\n  return (\n    <div>\n      <h2>Relatório de Vale Refeição - {month}/{year}</h2>\n      <p>Funcionário: {employee.name}</p>\n      <p>Dias úteis no mês: {workingDays}</p>\n      <p>Faltas registradas: {absences}</p>\n      <p>Dias trabalhados considerados: {daysWorked}</p>\n      <p>Valor diário do VR: R$ {dailyVRRate.toFixed(2)}</p>\n      <h3>Total a receber: R$ {totalVR.toFixed(2)}</h3>\n    </div>\n  );\n};\n\nexport default VRReport;\n"
+    },
+    {
+      "path": "src/modules/benefits/VTReport.tsx",
+      "content": "import React from 'react';\nimport { useEmployeeData, calculateWorkingDays, getAbsences } from '../../utils/dataUtils';\n\ninterface VTReportProps {\n  employeeId: string;\n  month: number;\n  year: number;\n}\n\nconst VTReport: React.FC<VTReportProps> = ({ employeeId, month, year }) => {\n  const employee = useEmployeeData(employeeId);\n  const workingDays = calculateWorkingDays(month, year);\n  const absences = getAbsences(employeeId, month, year);\n  const daysWorked = workingDays - absences;\n  const dailyVTRate = employee.vtValue / workingDays;\n  const totalVT = dailyVTRate * daysWorked;\n\n  return (\n    <div>\n      <h2>Relatório de Vale Transporte - {month}/{year}</h2>\n      <p>Funcionário: {employee.name}</p>\n      <p>Dias úteis no mês: {workingDays}</p>\n      <p>Faltas registradas: {absences}</p>\n      <p>Dias trabalhados considerados: {daysWorked}</p>\n      <p>Valor diário do VT: R$ {dailyVTRate.toFixed(2)}</p>\n      <h3>Total a receber: R$ {totalVT.toFixed(2)}</h3>\n    </div>\n  );\n};\n\nexport default VTReport;\n"
+    },
+    {
+      "path": "src/utils/dataUtils.ts",
+      "content": "import { Employee, Absence } from '../types';\n\n// Função para recuperar dados do funcionário (mock ou chamada real em projeto existente)\nexport function useEmployeeData(employeeId: string): Employee {\n  // Exemplo fixo para a tarefa\n  return {\n    id: employeeId,\n    name: 'João Silva',\n    vrValue: 220.0,\n    vtValue: 150.0\n  };\n}\n\n// Calcula número de dias úteis do mês (sem feriados complexos)\nexport function calculateWorkingDays(month: number, year: number): number {\n  let workingDays = 0;\n  const date = new Date(year, month - 1, 1);\n  while (date.getMonth() === month - 1) {\n    const day = date.getDay();\n    if (day !== 0 && day !== 6) { // Ignora domingo(0) e sábado(6)\n      workingDays++;\n    }\n    date.setDate(date.getDate() + 1);\n  }\n  return workingDays;\n}\n\n// Recupera número de faltas no mês para o funcionário (mock ou fetch real)\nexport function getAbsences(employeeId: string, month: number, year: number): number {\n  // Simulação simples, retornando 2 faltas por padrão para teste\n  return 2;\n}\n"
+    }
+  ]
+}

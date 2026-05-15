@@ -1,0 +1,127 @@
+import React, { useState, useEffect } from 'react';
+
+interface PointingData {
+  cpf: string;
+  timestamp: string;
+  location: {
+    latitude: number;
+    longitude: number;
+  } | null;
+  photo: string | null;
+  mobile: string;
+}
+
+const App: React.FC = () => {
+  const [cpf, setCpf] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [location, setLocation] = useState<{latitude: number; longitude: number} | null>(null);
+  const [photo, setPhoto] = useState<string | null>(null);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    // Pede permissão e obtém localização do usuário
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          setLocation({ latitude: pos.coords.latitude, longitude: pos.coords.longitude });
+        },
+        () => {
+          setMessage('Não foi possível obter localização.');
+        }
+      );
+    } else {
+      setMessage('Geolocalização não suportada.');
+    }
+  }, []);
+
+  const handlePhoto = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhoto(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmit = async () => {
+    if (!cpf || !mobile) {
+      setMessage('Preencha CPF e telefone móvel.');
+      return;
+    }
+    const pointingData: PointingData = {
+      cpf,
+      timestamp: new Date().toISOString(),
+      location,
+      photo,
+      mobile
+    };
+    try {
+      // Supondo API que recebe batida
+      const response = await fetch('/api/pointing', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(pointingData)
+      });
+      if (response.ok) {
+        setMessage('Ponto registrado com sucesso.');
+        setPhoto(null);
+        setLocation(null);
+        setCpf('');
+        setMobile('');
+      } else {
+        setMessage('Erro ao registrar ponto.');
+      }
+    } catch (error) {
+      setMessage('Falha na conexão.');
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: '400px', margin: '20px auto', fontFamily: 'Arial, sans-serif' }}>
+      <h1>Registre seu ponto</h1>
+      <label>
+        CPF:<br />
+        <input
+          type="text"
+          value={cpf}
+          onChange={e => setCpf(e.target.value)}
+          placeholder="Digite seu CPF"
+          maxLength={14}
+          pattern="\d{3}\.\d{3}\.\d{3}-\d{2}"
+          required
+        />
+      </label>
+      <br /><br />
+      <label>
+        Telefone móvel:<br />
+        <input
+          type="tel"
+          value={mobile}
+          onChange={e => setMobile(e.target.value)}
+          placeholder="(00) 00000-0000"
+          pattern="\([0-9]{2}\) [0-9]{4,5}-[0-9]{4}"
+          required
+        />
+      </label>
+      <br /><br />
+      <label>
+        Foto (selfie):<br />
+        <input type="file" accept="image/*" capture="user" onChange={handlePhoto} />
+      </label>
+      {photo && <div><img src={photo} alt="Foto capturada" style={{ marginTop: '10px', maxWidth: '100%' }} /></div>}
+      <br />
+      <div>
+        Localização: {location ? `${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}` : 'Não capturada'}
+      </div>
+      <br />
+      <button onClick={handleSubmit} style={{ padding: '10px 20px', cursor: 'pointer' }}>
+        Registrar ponto
+      </button>
+      <p style={{ color: 'red' }}>{message}</p>
+    </div>
+  );
+};
+
+export default App;
