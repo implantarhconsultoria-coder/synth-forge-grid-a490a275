@@ -1,16 +1,16 @@
 name: AI Factory Worker
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
 
 jobs:
-  worker:
+  run-worker:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout AI Factory
         uses: actions/checkout@v4
 
       - name: Setup Node
@@ -18,14 +18,14 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install worker dependencies
+        working-directory: factory-worker
         run: npm install
 
       - name: Run AI Factory Worker
+        working-directory: factory-worker
+        run: node start-factory.mjs
         env:
-          RUN_ONCE: 'true'
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          GITHUB_PAT: ${{ secrets.GITHUB_PAT }}
-        run: node factory-worker/index.mjs
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
