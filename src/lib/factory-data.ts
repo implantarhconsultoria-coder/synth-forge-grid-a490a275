@@ -244,6 +244,7 @@ const state = {
   summary: null as Record<string, unknown> | null,
   source: "mock" as DataSource,
   hydrated: false,
+  lastSyncAt: null as string | null,
 };
 
 const listeners = new Set<() => void>();
