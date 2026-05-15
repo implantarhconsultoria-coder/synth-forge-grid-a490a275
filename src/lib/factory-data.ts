@@ -260,6 +260,9 @@ export const factoryData = {
   get source() {
     return state.source;
   },
+  getLastSyncAt(): string | null {
+    return state.lastSyncAt;
+  },
 
   // Reads (sincronos)
   getProjects(): Project[] {
