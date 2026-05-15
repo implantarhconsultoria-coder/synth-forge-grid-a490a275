@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
+import { BuildDiagnostics } from "@/components/BuildDiagnostics";
 import { Stethoscope, ShieldAlert, Wrench, Activity, BadgeCheck } from "lucide-react";
 import { toast } from "sonner";
 
@@ -117,6 +118,8 @@ function DoctorPage() {
           ))}
         </ul>
       </section>
+
+      <BuildDiagnostics />
 
       <div className="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm text-warning">
         Erros simples podem ser corrigidos automaticamente. Ações sensíveis exigem aprovação.
