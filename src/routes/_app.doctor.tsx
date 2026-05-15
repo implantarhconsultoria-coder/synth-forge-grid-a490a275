@@ -119,7 +119,7 @@ function DoctorPage() {
         </ul>
       </section>
 
-      <BuildDiagnostics />
+      
 
       <div className="rounded-xl border border-warning/40 bg-warning/10 p-4 text-sm text-warning">
         Erros simples podem ser corrigidos automaticamente. Ações sensíveis exigem aprovação.
