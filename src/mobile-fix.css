@@ -1,0 +1,11 @@
+html, body {
+  overflow-x: hidden;
+}
+
+body {
+  min-width: 0;
+}
+
+button, a, input, textarea, select {
+  touch-action: manipulation;
+}
