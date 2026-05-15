@@ -317,6 +317,15 @@ export const factoryData = {
   async hydrate() {
     if (state.hydrated) return;
     state.hydrated = true;
+    await this._fetchAll();
+  },
+
+  async refresh() {
+    state.hydrated = false;
+    await this._fetchAll();
+  },
+
+  async _fetchAll() {
     const [projects, logs, integrations, missions, memories, summary] = await Promise.all([
       supabaseApi.listProjects(),
       supabaseApi.listSmartLogs(50),
@@ -344,6 +353,7 @@ export const factoryData = {
     if (summary && typeof summary === "object") state.summary = summary as Record<string, unknown>;
 
     if (realCount > 0) state.source = "real";
+    state.lastSyncAt = new Date().toISOString();
     emit();
   },
 
