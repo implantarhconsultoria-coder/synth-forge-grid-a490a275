@@ -22,7 +22,7 @@ export function BuildDiagnostics() {
           </span>
         ) : (
           <span className="inline-flex items-center gap-1 text-xs text-warning">
-            <AlertTriangle className="size-3.5" /> Possível divergência da main
+            <AlertTriangle className="size-3.5" /> Ambiente local ativo
           </span>
         )}
       </div>
