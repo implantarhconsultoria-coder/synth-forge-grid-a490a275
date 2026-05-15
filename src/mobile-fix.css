@@ -1,4 +1,5 @@
-html, body {
+html,
+body {
   overflow-x: hidden;
 }
 
@@ -6,6 +7,87 @@ body {
   min-width: 0;
 }
 
-button, a, input, textarea, select {
+button,
+a,
+input,
+textarea,
+select {
   touch-action: manipulation;
+}
+
+/* Desktop aprovado: nao redesenhar. Mantem a tela aberta, sidebar fixa e conteudo largo. */
+@media (min-width: 1024px) {
+  aside {
+    transform: translateX(0) !important;
+  }
+
+  main {
+    max-width: 1400px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding-left: 2rem !important;
+    padding-right: 2rem !important;
+    padding-top: 2.5rem !important;
+  }
+
+  main > div {
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  main > div > section:first-child {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  main > div > section:first-child > div:first-child {
+    display: none !important;
+  }
+
+  main > div > section:first-child h1 {
+    max-width: 1100px !important;
+    font-size: clamp(3.75rem, 5vw, 4.75rem) !important;
+    line-height: 0.95 !important;
+  }
+
+  main > div > section:first-child p:not(:first-child) {
+    max-width: 720px !important;
+  }
+}
+
+/* Mobile: aqui sim ajusta para celular, sem mexer no desktop. */
+@media (max-width: 1023px) {
+  aside {
+    width: min(84vw, 18rem) !important;
+  }
+
+  header {
+    height: 3.75rem !important;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding: 1rem !important;
+  }
+
+  main h1 {
+    font-size: clamp(2.25rem, 12vw, 3.4rem) !important;
+    line-height: 0.95 !important;
+  }
+
+  main section {
+    max-width: 100% !important;
+  }
+
+  main button {
+    min-height: 44px;
+  }
 }
