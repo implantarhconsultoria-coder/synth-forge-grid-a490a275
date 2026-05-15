@@ -1,10 +1,7 @@
-import { createClient } from "@supabase/supabase-js";
-import { spawn } from "child_process";
+import WebSocket from "ws";
+globalThis.WebSocket = WebSocket;
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY
-);
+import { spawn } from "child_process";
 
 console.log("AI FACTORY ORQUESTRADOR LIGADO");
 
