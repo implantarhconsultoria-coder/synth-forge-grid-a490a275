@@ -116,11 +116,26 @@ export function AppShell() {
             <span>Núcleo IA online</span>
             <span className="hidden sm:inline">· região: br-sp · v2.4.1</span>
           </div>
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">
               <kbd className="font-mono">⌘</kbd>
               <kbd className="font-mono">K</kbd>
               <span>Buscar / executar</span>
+            </div>
+            <button
+              onClick={() => factoryData.refresh()}
+              className="flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Atualizar dados"
+            >
+              <RefreshCw className="size-3.5" />
+              <span className="hidden sm:inline">Atualizar</span>
+            </button>
+            <div className="flex flex-col items-end leading-none gap-0.5">
+              {factoryData.getLastSyncAt() && (
+                <span className="text-[10px] text-muted-foreground">
+                  {new Date(factoryData.getLastSyncAt()!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                </span>
+              )}
             </div>
             <div className="size-8 rounded-full bg-gradient-primary grid place-items-center text-xs font-semibold text-primary-foreground">
               IR
