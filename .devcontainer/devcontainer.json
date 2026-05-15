@@ -1,0 +1,1 @@
+{"name":"AI Factory Worker","postCreateCommand":"bash .devcontainer/postCreate.sh"}
