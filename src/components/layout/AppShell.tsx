@@ -135,12 +135,9 @@ export function AppShell() {
               <RefreshCw className="size-3.5" />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
-            <div className="flex flex-col items-end leading-none gap-0.5">
-              {factoryData.getLastSyncAt() && (
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(factoryData.getLastSyncAt()!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                </span>
-              )}
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs font-mono text-foreground">
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+              {now.toLocaleTimeString("pt-BR")}
             </div>
             <div className="size-8 rounded-full bg-gradient-primary grid place-items-center text-xs font-semibold text-primary-foreground">
               IR
