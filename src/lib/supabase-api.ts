@@ -115,4 +115,25 @@ export const supabaseApi = {
   },
 
   insertSmartLog: (payload: Record<string, unknown>) => safe(() => supabase.from("smart_logs").insert(payload).select().single() as any),
+
+  listExecutionQueue: (limit = 20) =>
+    safe(() => supabase.from("ai_execution_queue").select("*").order("created_at", { ascending: false }).limit(limit) as any),
+
+  insertExecutionQueue: (payload: Record<string, unknown>) =>
+    safe(() => supabase.from("ai_execution_queue").insert(payload).select().single() as any),
 };
+
+// Realtime subscriptions (best-effort). Returns unsubscribe fn.
+export function subscribeTable(table: string, onChange: () => void) {
+  try {
+    const ch = supabase
+      .channel(`rt-${table}`)
+      .on("postgres_changes", { event: "*", schema: "public", table }, () => onChange())
+      .subscribe();
+    return () => {
+      try { supabase.removeChannel(ch); } catch { /* noop */ }
+    };
+  } catch {
+    return () => {};
+  }
+}
