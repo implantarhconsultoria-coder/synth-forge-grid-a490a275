@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 const NAV = [
   { to: "/", label: "Command Center", icon: LayoutDashboard },
@@ -31,9 +32,13 @@ const NAV = [
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   useFactoryData();
   useEffect(() => {
     void factoryData.hydrate();
+    const stop = factoryData.startRealtime();
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => { stop?.(); clearInterval(t); };
   }, []);
 
   return (
