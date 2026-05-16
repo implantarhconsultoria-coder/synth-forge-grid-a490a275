@@ -38,11 +38,15 @@ function statusPayload() {
   return {
     ok: true,
     worker: "AI Factory Local",
+    trabalhador: "Fábrica de IA Local",
     status: "online",
     port: PORT,
+    porta: PORT,
     queue: readJson(QUEUE_FILE, []).length,
+    fila: readJson(QUEUE_FILE, []).length,
     logs: readJson(LOG_FILE, []).length,
-    routes: ["/", "/health", "/queue", "/logs", "POST /queue"],
+    routes: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "POST /queue", "POST /fila"],
+    rotas: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "POST /queue", "POST /fila"],
   };
 }
 
@@ -54,8 +58,8 @@ function log(entry) {
 }
 
 function packageText(task) {
-  const project = task.projectName || task.project || "AI Factory";
-  const action = task.command || task.objective || task.action || "executar missão";
+  const project = task.projectName || task.projetoNome || task.project || "AI Factory";
+  const action = task.command || task.comando || task.objective || task.action || task.acao || "executar missão";
   const target = /supabase|banco|login|permiss|auth|tabela|rls/i.test(action) ? "Supabase" : /github|codigo|código|arquivo|worker|commit|repo/i.test(action) ? "GitHub/Codespaces" : "Lovable";
   const risk = /login|permiss|banco|financeiro|rh|sal[aá]rio|excluir|cliente|produção|producao/i.test(action) ? "ALTO - exige aprovação" : "MÉDIO";
   return [
@@ -103,7 +107,7 @@ function backupFiles(projectRoot, files) {
 }
 
 function processTask(task) {
-  log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.command}` });
+  log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.acao || task.command || task.comando}` });
   const output = packageText(task);
   const outputPath = path.join(OUTPUT_DIR, `${task.id}.txt`);
   fs.writeFileSync(outputPath, output);
@@ -119,7 +123,7 @@ function tick() {
   ensure();
   const queue = readJson(QUEUE_FILE, []);
   const next = [...queue];
-  const task = next.find((item) => ["queued", "pending"].includes(item.status));
+  const task = next.find((item) => ["queued", "pending", "pendente"].includes(item.status));
   if (!task) return;
   try {
     task.status = "processing";
@@ -145,27 +149,28 @@ function normalizeUrl(url) {
   return (url || "/").split("?")[0].replace(/\/$/, "") || "/";
 }
 
+function receiveTask(req, res) {
+  let body = "";
+  req.on("data", (chunk) => body += chunk);
+  req.on("end", () => {
+    const payload = body ? JSON.parse(body) : {};
+    const task = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "queued", ...payload };
+    const queue = readJson(QUEUE_FILE, []);
+    queue.unshift(task);
+    writeJson(QUEUE_FILE, queue);
+    log({ level: "info", taskId: task.id, message: `Tarefa recebida via API: ${task.projectName || task.projetoNome || task.project || task.action || task.acao || "sem título"}` });
+    send(res, 201, task);
+  });
+}
+
 function startApi() {
   http.createServer((req, res) => {
     const route = normalizeUrl(req.url);
     if (req.method === "OPTIONS") return send(res, 200, { ok: true });
-    if (req.method === "GET" && ["/", "/health", "/status"].includes(route)) return send(res, 200, statusPayload());
-    if (req.method === "GET" && route === "/queue") return send(res, 200, readJson(QUEUE_FILE, []));
+    if (req.method === "GET" && ["/", "/health", "/saude", "/status"].includes(route)) return send(res, 200, statusPayload());
+    if (req.method === "GET" && ["/queue", "/fila"].includes(route)) return send(res, 200, readJson(QUEUE_FILE, []));
     if (req.method === "GET" && route === "/logs") return send(res, 200, readJson(LOG_FILE, []));
-    if (req.method === "POST" && route === "/queue") {
-      let body = "";
-      req.on("data", (chunk) => body += chunk);
-      req.on("end", () => {
-        const payload = body ? JSON.parse(body) : {};
-        const task = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "queued", ...payload };
-        const queue = readJson(QUEUE_FILE, []);
-        queue.unshift(task);
-        writeJson(QUEUE_FILE, queue);
-        log({ level: "info", taskId: task.id, message: `Tarefa recebida via API: ${task.projectName || task.project || task.action || "sem título"}` });
-        send(res, 201, task);
-      });
-      return;
-    }
+    if (req.method === "POST" && ["/queue", "/fila"].includes(route)) return receiveTask(req, res);
     return send(res, 200, { ...statusPayload(), notice: `rota ${route} não existe, mas o worker está online` });
   }).listen(PORT, "0.0.0.0", () => console.log(`API worker ativa na porta ${PORT}`));
 }
