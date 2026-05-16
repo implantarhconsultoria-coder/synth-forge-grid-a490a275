@@ -1,78 +1,151 @@
 import fs from "fs";
 import path from "path";
-import { createClient } from "@supabase/supabase-js";
 import { execSync } from "child_process";
 
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
+const ROOT = process.cwd();
+const DATA_DIR = path.join(ROOT, "factory-data");
+const QUEUE_FILE = path.join(DATA_DIR, "execution-queue.json");
+const LOG_FILE = path.join(DATA_DIR, "execution-logs.json");
+const OUTPUT_DIR = path.join(ROOT, "factory-output");
+const BACKUP_DIR = path.join(ROOT, "factory-backups");
 
-console.log("AI Factory Worker iniciado com segurança");
+function ensure() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  if (!fs.existsSync(QUEUE_FILE)) fs.writeFileSync(QUEUE_FILE, "[]");
+  if (!fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, "[]");
+}
 
-async function processar() {
-  const { data: tarefas } = await supabase
-    .from("ai_execution_queue")
-    .select("*")
-    .eq("status", "pending")
-    .limit(1);
+function readJson(file, fallback = []) {
+  try {
+    return JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch {
+    return fallback;
+  }
+}
 
-  if (!tarefas || tarefas.length === 0) {
+function writeJson(file, value) {
+  fs.writeFileSync(file, JSON.stringify(value, null, 2));
+}
+
+function log(entry) {
+  const logs = readJson(LOG_FILE, []);
+  logs.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...entry });
+  writeJson(LOG_FILE, logs.slice(0, 300));
+  console.log(`[${entry.level || "info"}] ${entry.message}`);
+}
+
+function packageText(task) {
+  const project = task.projectName || task.project || "AI Factory";
+  const action = task.command || task.objective || task.action || "executar missão";
+  const target = /supabase|banco|login|permiss|auth|tabela|rls/i.test(action) ? "Supabase" : /github|codigo|código|arquivo|worker|commit|repo/i.test(action) ? "GitHub/Codespaces" : "Lovable";
+  const risk = /login|permiss|banco|financeiro|rh|sal[aá]rio|excluir|cliente|produção|producao/i.test(action) ? "ALTO - exige aprovação" : "MÉDIO";
+
+  return [
+    "PACOTE AI FACTORY - EXECUÇÃO CONTROLADA",
+    `Projeto: ${project}`,
+    `Destino sugerido: ${target}`,
+    `Risco: ${risk}`,
+    `Tarefa: ${task.id}`,
+    "",
+    "OBJETIVO",
+    action,
+    "",
+    "REGRAS DE PROTEÇÃO",
+    "- Não refazer o projeto do zero.",
+    "- Não alterar login, menus, permissões ou telas aprovadas sem necessidade.",
+    "- Não apagar dados, histórico, integrações ou layout validado.",
+    "- Fazer a menor alteração possível.",
+    "- Se envolver banco, RH, financeiro, permissões ou cliente real, pedir aprovação antes de aplicar.",
+    "",
+    "CRITÉRIO DE SUCESSO",
+    "- Resultado visível e testável.",
+    "- Build sem erro quando houver código.",
+    "- Mobile e desktop conferidos quando houver interface.",
+    "",
+    "TESTE FINAL",
+    "- Abrir a tela afetada.",
+    "- Conferir menu, login, permissões e dados existentes.",
+    "- Registrar conclusão na Factory.",
+  ].join("\n");
+}
+
+function backupFiles(projectRoot, files) {
+  if (!projectRoot || !files?.length) return null;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const targetDir = path.join(BACKUP_DIR, stamp);
+  fs.mkdirSync(targetDir, { recursive: true });
+
+  for (const file of files) {
+    const source = path.join(projectRoot, file);
+    if (!fs.existsSync(source)) continue;
+    const dest = path.join(targetDir, file);
+    fs.mkdirSync(path.dirname(dest), { recursive: true });
+    fs.copyFileSync(source, dest);
+  }
+
+  return targetDir;
+}
+
+function processTask(task) {
+  log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.command}` });
+
+  const output = packageText(task);
+  const outputPath = path.join(OUTPUT_DIR, `${task.id}.txt`);
+  fs.writeFileSync(outputPath, output);
+
+  const backupDir = backupFiles(task.projectRoot, task.files || []);
+
+  if (task.projectRoot && fs.existsSync(path.join(task.projectRoot, "package.json"))) {
+    try {
+      execSync("npm run build", { cwd: task.projectRoot, stdio: "inherit" });
+      log({ level: "ok", taskId: task.id, message: "Build validado com sucesso" });
+    } catch (error) {
+      log({ level: "error", taskId: task.id, message: `Build falhou: ${error.message}` });
+      throw error;
+    }
+  }
+
+  return { outputPath, backupDir };
+}
+
+function tick() {
+  ensure();
+  const queue = readJson(QUEUE_FILE, []);
+  const next = [...queue];
+  const task = next.find((item) => ["queued", "pending"].includes(item.status));
+
+  if (!task) {
     console.log("Sem tarefas pendentes");
     return;
   }
 
-  const tarefa = tarefas[0];
-  const payload = tarefa.payload || {};
-  const projeto = payload.projectRoot;
-  const arquivos = payload.files || [];
-
   try {
-    if (!projeto) throw new Error("projectRoot não informado");
-    if (!arquivos.length) throw new Error("files não informado");
+    task.status = "processing";
+    task.startedAt = new Date().toISOString();
+    writeJson(QUEUE_FILE, next);
 
-    const backupDir = path.join(process.cwd(), "factory-backups", String(Date.now()));
-    fs.mkdirSync(backupDir, { recursive: true });
+    const result = processTask(task);
 
-    for (const file of arquivos) {
-      const origem = path.join(projeto, file);
-      const destino = path.join(backupDir, file);
-      fs.mkdirSync(path.dirname(destino), { recursive: true });
-      fs.copyFileSync(origem, destino);
-    }
-
-    console.log("Backup criado");
-    console.log("Ação:", payload.action);
-
-    for (const file of arquivos) {
-      const arquivo = path.join(projeto, file);
-      let conteudo = fs.readFileSync(arquivo, "utf8");
-
-      if (!conteudo.includes("AI FACTORY SAFE PATCH")) {
-        conteudo = "// AI FACTORY SAFE PATCH\n" + conteudo;
-        fs.writeFileSync(arquivo, conteudo);
-      }
-    }
-
-    console.log("Patch aplicado. Validando build...");
-
-    execSync("npm run build", { cwd: projeto, stdio: "inherit" });
-
-    await supabase
-      .from("ai_execution_queue")
-      .update({ status: "done" })
-      .eq("id", tarefa.id);
-
-    console.log("Tarefa concluída com build OK");
-  } catch (err) {
-    console.log("Erro:", err.message);
-
-    await supabase
-      .from("ai_execution_queue")
-      .update({ status: "error", error_log: err.message })
-      .eq("id", tarefa.id);
+    task.status = "done";
+    task.finishedAt = new Date().toISOString();
+    task.outputPath = result.outputPath;
+    task.backupDir = result.backupDir;
+    writeJson(QUEUE_FILE, next);
+    log({ level: "ok", taskId: task.id, message: "Tarefa concluída pela AI Factory" });
+  } catch (error) {
+    task.status = "error";
+    task.error = error.message;
+    task.finishedAt = new Date().toISOString();
+    writeJson(QUEUE_FILE, next);
+    log({ level: "error", taskId: task.id, message: `Erro na tarefa: ${error.message}` });
   }
 }
 
-setInterval(processar, 10000);
-processar();
+ensure();
+console.log("AI Factory Worker LOCAL iniciado");
+console.log(`Fila: ${QUEUE_FILE}`);
+console.log(`Saídas: ${OUTPUT_DIR}`);
+tick();
+setInterval(tick, 10000);
