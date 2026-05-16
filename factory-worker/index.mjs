@@ -10,6 +10,7 @@ const LOG_FILE = path.join(DATA_DIR, "execution-logs.json");
 const OUTPUT_DIR = path.join(ROOT, "factory-output");
 const BACKUP_DIR = path.join(ROOT, "factory-backups");
 const PORT = Number(process.env.FACTORY_PORT || 8787);
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 
 function ensure() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -40,6 +41,7 @@ function statusPayload() {
     worker: "AI Factory Local",
     trabalhador: "Fábrica de IA Local",
     status: "online",
+    executorGithub: Boolean(GITHUB_TOKEN),
     port: PORT,
     porta: PORT,
     queue: readJson(QUEUE_FILE, []).length,
@@ -53,14 +55,14 @@ function statusPayload() {
 function log(entry) {
   const logs = readJson(LOG_FILE, []);
   logs.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...entry });
-  writeJson(LOG_FILE, logs.slice(0, 300));
+  writeJson(LOG_FILE, logs.slice(0, 500));
   console.log(`[${entry.level || "info"}] ${entry.message}`);
 }
 
 function packageText(task) {
   const project = task.projectName || task.projetoNome || task.project || "AI Factory";
   const action = task.command || task.comando || task.objective || task.action || task.acao || "executar missão";
-  const target = /supabase|banco|login|permiss|auth|tabela|rls/i.test(action) ? "Supabase" : /github|codigo|código|arquivo|worker|commit|repo/i.test(action) ? "GitHub/Codespaces" : "Lovable";
+  const target = task.repository ? "GitHub" : /supabase|banco|login|permiss|auth|tabela|rls/i.test(action) ? "Supabase" : /github|codigo|código|arquivo|worker|commit|repo/i.test(action) ? "GitHub/Codespaces" : "Lovable";
   const risk = /login|permiss|banco|financeiro|rh|sal[aá]rio|excluir|cliente|produção|producao/i.test(action) ? "ALTO - exige aprovação" : "MÉDIO";
   return [
     "PACOTE AI FACTORY - EXECUÇÃO CONTROLADA",
@@ -106,20 +108,136 @@ function backupFiles(projectRoot, files) {
   return targetDir;
 }
 
-function processTask(task) {
+function safePath(filePath) {
+  if (!filePath || typeof filePath !== "string") throw new Error("Arquivo inválido");
+  if (filePath.includes("..") || filePath.startsWith("/") || filePath.includes("\\")) throw new Error(`Caminho bloqueado: ${filePath}`);
+  return filePath;
+}
+
+function assertSafeTask(task) {
+  const text = JSON.stringify(task).toLowerCase();
+  const dangerous = ["delete from", "drop table", "truncate", "rm -rf", "service_role", "private key", "password", "senha", "secret"];
+  const hit = dangerous.find((word) => text.includes(word));
+  if (hit) throw new Error(`Tarefa bloqueada por segurança: ${hit}`);
+}
+
+async function githubRequest(endpoint, options = {}) {
+  if (!GITHUB_TOKEN) throw new Error("GITHUB_TOKEN/GH_TOKEN não configurado no worker");
+  const response = await fetch(`https://api.github.com${endpoint}`, {
+    ...options,
+    headers: {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${GITHUB_TOKEN}`,
+      "X-GitHub-Api-Version": "2022-11-28",
+      ...(options.headers || {}),
+    },
+  });
+  const text = await response.text();
+  const data = text ? JSON.parse(text) : null;
+  if (!response.ok) throw new Error(data?.message || `GitHub API ${response.status}`);
+  return data;
+}
+
+function encodeBase64Utf8(content) {
+  return Buffer.from(content, "utf8").toString("base64");
+}
+
+async function fetchGithubFile(repo, filePath, branch) {
+  const safe = safePath(filePath);
+  try {
+    return await githubRequest(`/repos/${repo}/contents/${encodeURIComponent(safe).replaceAll("%2F", "/")}?ref=${encodeURIComponent(branch)}`);
+  } catch (error) {
+    if (/not found/i.test(error.message)) return null;
+    throw error;
+  }
+}
+
+async function commitGithubFile({ repo, branch = "main", filePath, content, message }) {
+  const safe = safePath(filePath);
+  const current = await fetchGithubFile(repo, safe, branch);
+  const body = {
+    message: message || `AI Factory update ${safe}`,
+    content: encodeBase64Utf8(content),
+    branch,
+    ...(current?.sha ? { sha: current.sha } : {}),
+  };
+  const result = await githubRequest(`/repos/${repo}/contents/${encodeURIComponent(safe).replaceAll("%2F", "/")}`, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
+  return {
+    path: safe,
+    commitSha: result?.commit?.sha,
+    htmlUrl: result?.content?.html_url,
+  };
+}
+
+function applyReplacements(base, replacements = []) {
+  let next = base;
+  for (const item of replacements) {
+    if (!item?.search || typeof item.replace !== "string") throw new Error("replacement inválido");
+    if (!next.includes(item.search)) throw new Error(`Trecho não encontrado: ${item.search.slice(0, 80)}`);
+    next = next.replace(item.search, item.replace);
+  }
+  return next;
+}
+
+async function executeGithubTask(task) {
+  assertSafeTask(task);
+  const repo = task.repository || task.repo;
+  const branch = task.branch || "main";
+  const filePath = task.filePath || task.path || task.files?.[0];
+  if (!repo || !filePath) return null;
+
+  log({ level: "info", taskId: task.id, message: `Executor GitHub iniciado: ${repo}/${filePath}` });
+
+  let content = task.content;
+  if (!content && Array.isArray(task.replacements)) {
+    const current = await fetchGithubFile(repo, filePath, branch);
+    if (!current?.content) throw new Error("Arquivo base não encontrado para replacements");
+    const decoded = Buffer.from(current.content, "base64").toString("utf8");
+    content = applyReplacements(decoded, task.replacements);
+  }
+
+  if (typeof content !== "string") {
+    const payload = packageText(task);
+    const out = path.join(OUTPUT_DIR, `${task.id}-github-plan.txt`);
+    fs.writeFileSync(out, payload);
+    log({ level: "warn", taskId: task.id, message: "Tarefa GitHub sem content/replacements. Gerado plano, sem commit." });
+    return { planned: true, outputPath: out };
+  }
+
+  const result = await commitGithubFile({
+    repo,
+    branch,
+    filePath,
+    content,
+    message: task.commitMessage || task.message || `AI Factory: ${task.title || task.command || task.action || "update"}`,
+  });
+  log({ level: "ok", taskId: task.id, message: `Commit aplicado pela Factory: ${result.commitSha}` });
+  return result;
+}
+
+async function processTask(task) {
   log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.acao || task.command || task.comando}` });
   const output = packageText(task);
   const outputPath = path.join(OUTPUT_DIR, `${task.id}.txt`);
   fs.writeFileSync(outputPath, output);
   const backupDir = backupFiles(task.projectRoot, task.files || []);
+  let githubResult = null;
+
+  if (task.repository || task.repo) {
+    githubResult = await executeGithubTask(task);
+  }
+
   if (task.projectRoot && fs.existsSync(path.join(task.projectRoot, "package.json"))) {
     execSync("npm run build", { cwd: task.projectRoot, stdio: "inherit" });
     log({ level: "ok", taskId: task.id, message: "Build validado com sucesso" });
   }
-  return { outputPath, backupDir };
+  return { outputPath, backupDir, githubResult };
 }
 
-function tick() {
+async function tick() {
   ensure();
   const queue = readJson(QUEUE_FILE, []);
   const next = [...queue];
@@ -129,11 +247,12 @@ function tick() {
     task.status = "processing";
     task.startedAt = new Date().toISOString();
     writeJson(QUEUE_FILE, next);
-    const result = processTask(task);
+    const result = await processTask(task);
     task.status = "done";
     task.finishedAt = new Date().toISOString();
     task.outputPath = result.outputPath;
     task.backupDir = result.backupDir;
+    task.githubResult = result.githubResult;
     writeJson(QUEUE_FILE, next);
     log({ level: "ok", taskId: task.id, message: "Tarefa concluída pela AI Factory" });
   } catch (error) {
@@ -153,13 +272,17 @@ function receiveTask(req, res) {
   let body = "";
   req.on("data", (chunk) => body += chunk);
   req.on("end", () => {
-    const payload = body ? JSON.parse(body) : {};
-    const task = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "queued", ...payload };
-    const queue = readJson(QUEUE_FILE, []);
-    queue.unshift(task);
-    writeJson(QUEUE_FILE, queue);
-    log({ level: "info", taskId: task.id, message: `Tarefa recebida via API: ${task.projectName || task.projetoNome || task.project || task.action || task.acao || "sem título"}` });
-    send(res, 201, task);
+    try {
+      const payload = body ? JSON.parse(body) : {};
+      const task = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "queued", ...payload };
+      const queue = readJson(QUEUE_FILE, []);
+      queue.unshift(task);
+      writeJson(QUEUE_FILE, queue);
+      log({ level: "info", taskId: task.id, message: `Tarefa recebida via API: ${task.projectName || task.projetoNome || task.project || task.action || task.acao || "sem título"}` });
+      send(res, 201, task);
+    } catch (error) {
+      send(res, 400, { ok: false, error: error.message });
+    }
   });
 }
 
@@ -179,6 +302,7 @@ ensure();
 console.log("AI Factory Worker LOCAL iniciado");
 console.log(`Fila: ${QUEUE_FILE}`);
 console.log(`Saídas: ${OUTPUT_DIR}`);
+console.log(`Executor GitHub: ${GITHUB_TOKEN ? "ativo" : "sem token"}`);
 startApi();
-tick();
-setInterval(tick, 5000);
+void tick();
+setInterval(() => void tick(), 5000);
