@@ -6,11 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from "sonner";
 import { ExternalLink, Activity, Workflow, Wrench } from "lucide-react";
 
-export const Route = createFileRoute("/_app/projects")({
-  component: ProjectsPage,
-});
-
-const EXECUTION_KEY = "ai_factory_execution_queue";
+export const Route = createFileRoute("/_app/projects")({ component: ProjectsPage });
 
 const statusStyles = {
   online: { dot: "bg-success text-success", label: "Online" },
@@ -19,19 +15,21 @@ const statusStyles = {
   offline: { dot: "bg-muted-foreground text-muted-foreground", label: "Offline" },
 } as const;
 
-function queueExecution(payload: Record<string, unknown>) {
-  const current = JSON.parse(localStorage.getItem(EXECUTION_KEY) || "[]");
-  const execution = {
-    id: crypto.randomUUID(),
-    createdAt: new Date().toISOString(),
-    status: "queued",
-    ...payload,
-  };
+function workerUrl() {
+  const origin = window.location.origin;
+  if (origin.includes("-8080.app.github.dev")) return origin.replace("-8080.app.github.dev", "-8787.app.github.dev");
+  if (origin.includes("localhost")) return "http://localhost:8787";
+  return localStorage.getItem("ai_factory_worker_url") || "http://localhost:8787";
+}
 
-  current.unshift(execution);
-  localStorage.setItem(EXECUTION_KEY, JSON.stringify(current));
-
-  return execution;
+async function sendToWorker(payload: Record<string, unknown>) {
+  const response = await fetch(`${workerUrl()}/queue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("worker offline");
+  return response.json();
 }
 
 function ProjectsPage() {
@@ -40,85 +38,26 @@ function ProjectsPage() {
   const [, force] = useState(0);
   const projects = factoryData.getProjects();
 
-  const handleMonitor = (p: Project) => {
-    const exec = queueExecution({
-      type: "monitor",
-      projectId: p.id,
-      projectName: p.name,
-      action: "deep_monitor_scan",
-    });
-
-    factoryData.addLog({
-      projectId: p.id,
-      type: "monitor",
-      level: "info",
-      message: `Monitoramento real enfileirado em ${p.name}`,
-    });
-
-    toast.success(`Monitoramento iniciado · ${exec.id.slice(0, 6)}`);
-    force((n) => n + 1);
+  const runAction = async (p: Project, action: string, label: string) => {
+    try {
+      const task = await sendToWorker({
+        type: action,
+        projectId: p.id,
+        projectName: p.name,
+        action,
+        command: `${label} ${p.name}`,
+      });
+      factoryData.addLog({ projectId: p.id, type: "system", level: "info", message: `${label} enviado ao worker: ${p.name}` });
+      toast.success(`${label} enviado · ${String(task.id).slice(0, 6)}`);
+      force((n) => n + 1);
+    } catch {
+      factoryData.addLog({ projectId: p.id, type: "system", level: "error", message: `Worker offline ao executar ${label} em ${p.name}` });
+      toast.error("Worker offline. Verifique porta 8787.");
+    }
   };
 
-  const handleCorrect = (p: Project) => {
-    const correction = factoryData.addCorrection({
-      projectId: p.id,
-      title: `Correção operacional em ${p.name}`,
-      description: "Missão enviada ao núcleo executor.",
-      riskLevel: "low",
-    });
-
-    const exec = queueExecution({
-      type: "correction",
-      projectId: p.id,
-      projectName: p.name,
-      correctionId: correction.id,
-      action: "analyze_and_patch",
-    });
-
-    factoryData.addLog({
-      projectId: p.id,
-      type: "correction",
-      level: "warn",
-      message: `Patch solicitado para ${p.name}`,
-    });
-
-    toast.success(`Correção enviada · ${exec.id.slice(0, 6)}`);
-    force((n) => n + 1);
-  };
-
-  const handleAutomate = (p: Project) => {
-    const command = factoryData.addCommand({
-      commandText: `automatizar ${p.name}`,
-      interpretedAction: `automation.start(${p.id})`,
-    });
-
-    const exec = queueExecution({
-      type: "automation",
-      projectId: p.id,
-      projectName: p.name,
-      commandId: command.id,
-      action: "start_operational_automation",
-    });
-
-    factoryData.addLog({
-      projectId: p.id,
-      type: "automation",
-      level: "info",
-      message: `Automação operacional iniciada em ${p.name}`,
-    });
-
-    toast.success(`Executor acionado · ${exec.id.slice(0, 6)}`);
-    force((n) => n + 1);
-  };
-
-  const handleOpen = (p: Project) => {
-    queueExecution({
-      type: "open_project",
-      projectId: p.id,
-      projectName: p.name,
-      action: "inspect_project_context",
-    });
-
+  const handleOpen = async (p: Project) => {
+    await runAction(p, "inspect_project_context", "Inspecionar");
     setOpen(p);
   };
 
@@ -133,7 +72,7 @@ function ProjectsPage() {
       </header>
 
       <div className="rounded-xl glass p-4 text-xs text-muted-foreground border border-primary/20">
-        Executor local ativo · comandos agora entram na fila operacional real do navegador.
+        Worker conectado em <span className="text-primary font-mono">{workerUrl()}</span> · botões enviam tarefas reais para a fila local.
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -147,50 +86,20 @@ function ProjectsPage() {
                   <h2 className="text-lg font-semibold mt-1">{p.name}</h2>
                 </div>
                 <div className="flex flex-col items-end gap-1.5">
-                  <span className="inline-flex items-center gap-2 text-xs">
-                    <span className={`size-2 rounded-full pulse-dot ${s.dot}`} />
-                    {s.label}
-                  </span>
+                  <span className="inline-flex items-center gap-2 text-xs"><span className={`size-2 rounded-full pulse-dot ${s.dot}`} />{s.label}</span>
                   <SourceBadge source={p.source} />
                 </div>
               </div>
               <p className="text-sm text-muted-foreground">{p.description}</p>
-
               <div>
-                <div className="flex justify-between text-xs">
-                  <span className="text-muted-foreground">Progresso</span>
-                  <span className="font-mono">{p.progress}%</span>
-                </div>
-                <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                  <div className="h-full bg-gradient-primary" style={{ width: `${p.progress}%` }} />
-                </div>
+                <div className="flex justify-between text-xs"><span className="text-muted-foreground">Progresso</span><span className="font-mono">{p.progress}%</span></div>
+                <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div className="h-full bg-gradient-primary" style={{ width: `${p.progress}%` }} /></div>
               </div>
-
               <div className="grid grid-cols-2 gap-2 mt-auto">
-                <button
-                  onClick={() => handleOpen(p)}
-                  className="inline-flex items-center justify-center gap-1 rounded-md bg-gradient-primary py-2 text-xs font-medium text-primary-foreground"
-                >
-                  <ExternalLink className="size-3" /> Abrir
-                </button>
-                <button
-                  onClick={() => handleMonitor(p)}
-                  className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"
-                >
-                  <Activity className="size-3" /> Monitorar
-                </button>
-                <button
-                  onClick={() => handleCorrect(p)}
-                  className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"
-                >
-                  <Wrench className="size-3" /> Corrigir
-                </button>
-                <button
-                  onClick={() => handleAutomate(p)}
-                  className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"
-                >
-                  <Workflow className="size-3" /> Automatizar
-                </button>
+                <button onClick={() => handleOpen(p)} className="inline-flex items-center justify-center gap-1 rounded-md bg-gradient-primary py-2 text-xs font-medium text-primary-foreground"><ExternalLink className="size-3" /> Abrir</button>
+                <button onClick={() => runAction(p, "deep_monitor_scan", "Monitorar")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Activity className="size-3" /> Monitorar</button>
+                <button onClick={() => runAction(p, "analyze_and_patch", "Corrigir")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Wrench className="size-3" /> Corrigir</button>
+                <button onClick={() => runAction(p, "start_operational_automation", "Automatizar")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Workflow className="size-3" /> Automatizar</button>
               </div>
             </article>
           );
@@ -198,29 +107,9 @@ function ProjectsPage() {
       </div>
 
       <DataSourceFooter />
-
       <Dialog open={!!open} onOpenChange={(v) => !v && setOpen(null)}>
         <DialogContent className="glass">
-          {open && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {open.name}
-                  <SourceBadge source={open.source} />
-                </DialogTitle>
-                <DialogDescription>{open.description}</DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <Info label="Categoria" value={open.category} />
-                <Info label="Status" value={statusStyles[open.status].label} />
-                <Info label="Progresso" value={`${open.progress}%`} />
-                <Info label="Privado" value={open.isPrivate ? "Sim" : "Não"} />
-                <Info label="Externo" value={open.isExternal ? "Sim" : "Não"} />
-                <Info label="Atualizado" value={new Date(open.lastUpdate).toLocaleString("pt-BR")} />
-              </div>
-              <div className="text-xs font-mono text-muted-foreground">id: {open.id}</div>
-            </>
-          )}
+          {open && <><DialogHeader><DialogTitle className="flex items-center gap-2">{open.name}<SourceBadge source={open.source} /></DialogTitle><DialogDescription>{open.description}</DialogDescription></DialogHeader><div className="grid grid-cols-2 gap-3 text-sm"><Info label="Categoria" value={open.category} /><Info label="Status" value={statusStyles[open.status].label} /><Info label="Progresso" value={`${open.progress}%`} /><Info label="Privado" value={open.isPrivate ? "Sim" : "Não"} /><Info label="Externo" value={open.isExternal ? "Sim" : "Não"} /><Info label="Atualizado" value={new Date(open.lastUpdate).toLocaleString("pt-BR")} /></div><div className="text-xs font-mono text-muted-foreground">id: {open.id}</div></>}
         </DialogContent>
       </Dialog>
     </div>
@@ -228,10 +117,5 @@ function ProjectsPage() {
 }
 
 function Info({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md glass p-3">
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="mt-1 font-medium">{value}</div>
-    </div>
-  );
+  return <div className="rounded-md glass p-3"><div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div><div className="mt-1 font-medium">{value}</div></div>;
 }
