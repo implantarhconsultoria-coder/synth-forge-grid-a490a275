@@ -10,6 +10,7 @@ export const Route = createFileRoute("/_app/projects")({ component: ProjectsPage
 
 const TOPAC_REPOSITORY = "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5";
 const TOPAC_CLIENTES_FILE = "src/pages/faturamento/ClientesFatPage.tsx";
+const DEFAULT_WORKER_URL = "https://stunning-train-r7ggp5447rj93ppw6-8787.app.github.dev";
 
 const statusStyles = {
   online: { dot: "bg-success text-success", label: "Online" },
@@ -23,7 +24,9 @@ function workerUrl() {
   if (origin.includes("-8081.app.github.dev")) return origin.replace("-8081.app.github.dev", "-8787.app.github.dev");
   if (origin.includes("-8080.app.github.dev")) return origin.replace("-8080.app.github.dev", "-8787.app.github.dev");
   if (origin.includes("localhost")) return "http://localhost:8787";
-  return localStorage.getItem("ai_factory_worker_url") || "http://localhost:8787";
+  const saved = localStorage.getItem("ai_factory_worker_url");
+  if (saved && !saved.includes("localhost")) return saved;
+  return DEFAULT_WORKER_URL;
 }
 
 async function sendToWorker(payload: Record<string, unknown>) {
@@ -87,7 +90,7 @@ function ProjectsPage() {
       force((n) => n + 1);
     } catch {
       factoryData.addLog({ projectId: p.id, type: "system", level: "error", message: `Worker offline ao executar ${label} em ${p.name}` });
-      toast.error("Worker offline. Verifique porta 8787.");
+      toast.error(`Worker offline. Usando: ${workerUrl()}`);
     }
   };
 
@@ -107,7 +110,7 @@ function ProjectsPage() {
       </header>
 
       <div className="rounded-xl glass p-4 text-xs text-muted-foreground border border-primary/20">
-        Worker conectado em <span className="text-primary font-mono">{workerUrl()}</span> · TOPAC configurado para execução GitHub API no repo real.
+        Worker conectado em <span className="text-primary font-mono break-all">{workerUrl()}</span> · TOPAC configurado para execução GitHub API no repo real.
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
