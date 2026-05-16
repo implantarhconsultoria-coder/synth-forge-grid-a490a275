@@ -11,6 +11,8 @@ const OUTPUT_DIR = path.join(ROOT, "factory-output");
 const BACKUP_DIR = path.join(ROOT, "factory-backups");
 const PORT = Number(process.env.FACTORY_PORT || 8787);
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
+const AUTOPILOT_FILE = path.join(DATA_DIR, "autopilot.json");
+const AUTOPILOT_DEFAULT = process.env.FACTORY_AUTOPILOT !== "false";
 
 function ensure() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -18,6 +20,7 @@ function ensure() {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
   if (!fs.existsSync(QUEUE_FILE)) fs.writeFileSync(QUEUE_FILE, "[]");
   if (!fs.existsSync(LOG_FILE)) fs.writeFileSync(LOG_FILE, "[]");
+  if (!fs.existsSync(AUTOPILOT_FILE)) fs.writeFileSync(AUTOPILOT_FILE, JSON.stringify({ enabled: AUTOPILOT_DEFAULT, lastSeedAt: null }, null, 2));
 }
 
 function readJson(file, fallback = []) {
@@ -35,20 +38,33 @@ function send(res, code, data) {
   res.end(JSON.stringify(data, null, 2));
 }
 
+function getAutopilot() {
+  return readJson(AUTOPILOT_FILE, { enabled: AUTOPILOT_DEFAULT, lastSeedAt: null });
+}
+function setAutopilot(enabled) {
+  const current = getAutopilot();
+  writeJson(AUTOPILOT_FILE, { ...current, enabled, updatedAt: new Date().toISOString() });
+  return getAutopilot();
+}
+
 function statusPayload() {
+  const autopilot = getAutopilot();
+  const queue = readJson(QUEUE_FILE, []);
   return {
     ok: true,
     worker: "AI Factory Local",
     trabalhador: "Fábrica de IA Local",
     status: "online",
+    autopilot: autopilot.enabled ? "ativo" : "pausado",
     executorGithub: Boolean(GITHUB_TOKEN),
     port: PORT,
     porta: PORT,
-    queue: readJson(QUEUE_FILE, []).length,
-    fila: readJson(QUEUE_FILE, []).length,
+    queue: queue.length,
+    fila: queue.length,
+    pendentes: queue.filter((t) => ["queued", "pending", "pendente"].includes(t.status)).length,
     logs: readJson(LOG_FILE, []).length,
-    routes: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "POST /queue", "POST /fila"],
-    rotas: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "POST /queue", "POST /fila"],
+    routes: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "/autopilot/start", "/autopilot/stop", "POST /queue", "POST /fila"],
+    rotas: ["/", "/health", "/saude", "/status", "/queue", "/fila", "/logs", "/autopilot/start", "/autopilot/stop", "POST /queue", "POST /fila"],
   };
 }
 
@@ -218,6 +234,36 @@ async function executeGithubTask(task) {
   return result;
 }
 
+function seedAutopilotBacklog() {
+  const autopilot = getAutopilot();
+  if (!autopilot.enabled) return;
+  const queue = readJson(QUEUE_FILE, []);
+  const hasPending = queue.some((t) => ["queued", "pending", "pendente", "processing"].includes(t.status));
+  if (hasPending) return;
+
+  const existingIds = new Set(queue.map((t) => t.id));
+  const backlog = [
+    {
+      id: "auto-topac-faturamento-checklist",
+      status: "queued",
+      type: "github_commit",
+      projectName: "TOPAC RH",
+      module: "Faturamento",
+      repository: "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5",
+      filePath: "docs/AI_FACTORY_AUTOPILOT.md",
+      commitMessage: "AI Factory: registrar plano autônomo de execução",
+      command: "Registrar plano autônomo da Factory para Faturamento, Clientes, Cadastro Inteligente, validação e próximos passos.",
+      content: `# AI Factory Autopilot\n\nStatus: ativo\n\n## Prioridade atual\n- Faturamento > Clientes\n- Novo Cliente Inteligente\n- Upload de PDF/foto/print\n- Conferência antes de salvar\n- Não quebrar cadastro manual\n\n## Próximos ciclos automáticos\n1. Mapear arquivos do módulo de Faturamento.\n2. Aplicar pequenas mudanças seguras por commit.\n3. Registrar logs e resultados.\n4. Deixar tarefas sensíveis aguardando aprovação.\n\nGerado automaticamente pela AI Factory.\n`,
+    },
+  ].filter((task) => !existingIds.has(task.id));
+
+  if (!backlog.length) return;
+  const stamped = backlog.map((task) => ({ ...task, createdAt: new Date().toISOString(), autopilot: true }));
+  writeJson(QUEUE_FILE, [...queue, ...stamped]);
+  writeJson(AUTOPILOT_FILE, { ...autopilot, lastSeedAt: new Date().toISOString() });
+  log({ level: "info", message: `Autopilot criou ${stamped.length} tarefa(s) automática(s)` });
+}
+
 async function processTask(task) {
   log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.acao || task.command || task.comando}` });
   const output = packageText(task);
@@ -239,6 +285,7 @@ async function processTask(task) {
 
 async function tick() {
   ensure();
+  seedAutopilotBacklog();
   const queue = readJson(QUEUE_FILE, []);
   const next = [...queue];
   const task = next.find((item) => ["queued", "pending", "pendente"].includes(item.status));
@@ -293,6 +340,8 @@ function startApi() {
     if (req.method === "GET" && ["/", "/health", "/saude", "/status"].includes(route)) return send(res, 200, statusPayload());
     if (req.method === "GET" && ["/queue", "/fila"].includes(route)) return send(res, 200, readJson(QUEUE_FILE, []));
     if (req.method === "GET" && route === "/logs") return send(res, 200, readJson(LOG_FILE, []));
+    if (req.method === "GET" && route === "/autopilot/start") return send(res, 200, { ok: true, autopilot: setAutopilot(true) });
+    if (req.method === "GET" && route === "/autopilot/stop") return send(res, 200, { ok: true, autopilot: setAutopilot(false) });
     if (req.method === "POST" && ["/queue", "/fila"].includes(route)) return receiveTask(req, res);
     return send(res, 200, { ...statusPayload(), notice: `rota ${route} não existe, mas o worker está online` });
   }).listen(PORT, "0.0.0.0", () => console.log(`API worker ativa na porta ${PORT}`));
@@ -303,6 +352,7 @@ console.log("AI Factory Worker LOCAL iniciado");
 console.log(`Fila: ${QUEUE_FILE}`);
 console.log(`Saídas: ${OUTPUT_DIR}`);
 console.log(`Executor GitHub: ${GITHUB_TOKEN ? "ativo" : "sem token"}`);
+console.log(`Autopilot: ${getAutopilot().enabled ? "ativo" : "pausado"}`);
 startApi();
 void tick();
 setInterval(() => void tick(), 5000);
