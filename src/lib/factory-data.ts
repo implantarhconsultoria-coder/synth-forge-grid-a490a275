@@ -3,7 +3,7 @@
 // API permanece sincrona para os componentes existentes.
 
 import { useSyncExternalStore } from "react";
-import { supabaseApi } from "./supabase-api";
+import { supabaseApi, subscribeTable } from "./supabase-api";
 
 export type DataSource = "mock" | "real";
 export type ProjectStatus = "online" | "build" | "alert" | "offline";
@@ -467,6 +467,49 @@ export const factoryData = {
     state.missions = [m, ...state.missions];
     emit();
     return m;
+  },
+
+  async createExecutionMission(payload: { title: string; objective?: string; project?: string }) {
+    const queuePayload = {
+      type: "project_update",
+      status: "open",
+      action: "execute_mission",
+      payload: {
+        projectRoot: "/workspaces/rh-prospera-hub",
+        project: payload.project ?? "AI FACTORY",
+        objective: payload.objective ?? payload.title,
+        files: [],
+      },
+    };
+    const inserted = await supabaseApi.insertExecutionQueue(queuePayload);
+    // Sempre registra missão local também
+    const m: Mission = {
+      id: str((inserted as any)?.id ?? uid()),
+      title: payload.title,
+      description: payload.objective ?? "",
+      status: "open",
+      createdAt: now(),
+      source: inserted ? "real" : "mock",
+    };
+    state.missions = [m, ...state.missions];
+    this.addLog({ type: "system", level: "info", message: `Missão enviada ao núcleo IA: ${payload.title}` });
+    emit();
+    return m;
+  },
+
+  startRealtime() {
+    if (typeof window === "undefined") return () => {};
+    const unsub = [
+      subscribeTable("smart_logs", () => void this._fetchAll()),
+      subscribeTable("ai_execution_queue", () => void this._fetchAll()),
+      subscribeTable("projects", () => void this._fetchAll()),
+    ];
+    // auto refresh leve a cada 30s
+    const id = setInterval(() => void this._fetchAll(), 30000);
+    return () => {
+      unsub.forEach((u) => u && u());
+      clearInterval(id);
+    };
   },
 
   async saveMemory(payload: { key: string; value: string }) {

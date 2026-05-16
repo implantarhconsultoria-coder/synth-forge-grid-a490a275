@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
+import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 const NAV = [
   { to: "/", label: "Command Center", icon: LayoutDashboard },
@@ -31,9 +32,13 @@ const NAV = [
 export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [now, setNow] = useState(() => new Date());
   useFactoryData();
   useEffect(() => {
     void factoryData.hydrate();
+    const stop = factoryData.startRealtime();
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => { stop?.(); clearInterval(t); };
   }, []);
 
   return (
@@ -130,12 +135,9 @@ export function AppShell() {
               <RefreshCw className="size-3.5" />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
-            <div className="flex flex-col items-end leading-none gap-0.5">
-              {factoryData.getLastSyncAt() && (
-                <span className="text-[10px] text-muted-foreground">
-                  {new Date(factoryData.getLastSyncAt()!).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
-                </span>
-              )}
+            <div className="hidden sm:flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs font-mono text-foreground">
+              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+              {now.toLocaleTimeString("pt-BR")}
             </div>
             <div className="size-8 rounded-full bg-gradient-primary grid place-items-center text-xs font-semibold text-primary-foreground">
               IR
@@ -147,11 +149,12 @@ export function AppShell() {
           <Outlet />
         </main>
 
-        <footer className="px-4 lg:px-8 py-6 text-xs text-muted-foreground border-t border-border/60">
+        <footer className="px-4 lg:px-8 py-6 pb-24 lg:pb-6 text-xs text-muted-foreground border-t border-border/60">
           AI FACTORY · Inteligência operacional by{" "}
           <span className="text-foreground">ImplantaRH ConsultoriaPRO Ltda.</span>
         </footer>
       </div>
+      <MobileBottomNav />
     </div>
   );
 }
