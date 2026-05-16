@@ -34,6 +34,18 @@ function send(res, code, data) {
   res.end(JSON.stringify(data, null, 2));
 }
 
+function statusPayload() {
+  return {
+    ok: true,
+    worker: "AI Factory Local",
+    status: "online",
+    port: PORT,
+    queue: readJson(QUEUE_FILE, []).length,
+    logs: readJson(LOG_FILE, []).length,
+    routes: ["/", "/health", "/queue", "/logs", "POST /queue"],
+  };
+}
+
 function log(entry) {
   const logs = readJson(LOG_FILE, []);
   logs.unshift({ id: crypto.randomUUID(), createdAt: new Date().toISOString(), ...entry });
@@ -129,13 +141,18 @@ function tick() {
   }
 }
 
+function normalizeUrl(url) {
+  return (url || "/").split("?")[0].replace(/\/$/, "") || "/";
+}
+
 function startApi() {
   http.createServer((req, res) => {
+    const route = normalizeUrl(req.url);
     if (req.method === "OPTIONS") return send(res, 200, { ok: true });
-    if (req.method === "GET" && req.url === "/health") return send(res, 200, { ok: true, worker: "AI Factory Local", queue: readJson(QUEUE_FILE, []).length });
-    if (req.method === "GET" && req.url === "/queue") return send(res, 200, readJson(QUEUE_FILE, []));
-    if (req.method === "GET" && req.url === "/logs") return send(res, 200, readJson(LOG_FILE, []));
-    if (req.method === "POST" && req.url === "/queue") {
+    if (req.method === "GET" && ["/", "/health", "/status"].includes(route)) return send(res, 200, statusPayload());
+    if (req.method === "GET" && route === "/queue") return send(res, 200, readJson(QUEUE_FILE, []));
+    if (req.method === "GET" && route === "/logs") return send(res, 200, readJson(LOG_FILE, []));
+    if (req.method === "POST" && route === "/queue") {
       let body = "";
       req.on("data", (chunk) => body += chunk);
       req.on("end", () => {
@@ -149,7 +166,7 @@ function startApi() {
       });
       return;
     }
-    return send(res, 404, { ok: false, error: "rota não encontrada" });
+    return send(res, 200, { ...statusPayload(), notice: `rota ${route} não existe, mas o worker está online` });
   }).listen(PORT, "0.0.0.0", () => console.log(`API worker ativa na porta ${PORT}`));
 }
 
