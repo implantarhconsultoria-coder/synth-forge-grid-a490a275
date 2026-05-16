@@ -8,6 +8,9 @@ import { ExternalLink, Activity, Workflow, Wrench } from "lucide-react";
 
 export const Route = createFileRoute("/_app/projects")({ component: ProjectsPage });
 
+const TOPAC_REPOSITORY = "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5";
+const TOPAC_CLIENTES_FILE = "src/pages/faturamento/ClientesFatPage.tsx";
+
 const statusStyles = {
   online: { dot: "bg-success text-success", label: "Online" },
   build: { dot: "bg-primary text-primary", label: "Em build" },
@@ -17,6 +20,7 @@ const statusStyles = {
 
 function workerUrl() {
   const origin = window.location.origin;
+  if (origin.includes("-8081.app.github.dev")) return origin.replace("-8081.app.github.dev", "-8787.app.github.dev");
   if (origin.includes("-8080.app.github.dev")) return origin.replace("-8080.app.github.dev", "-8787.app.github.dev");
   if (origin.includes("localhost")) return "http://localhost:8787";
   return localStorage.getItem("ai_factory_worker_url") || "http://localhost:8787";
@@ -32,6 +36,43 @@ async function sendToWorker(payload: Record<string, unknown>) {
   return response.json();
 }
 
+function buildTopacPayload(p: Project, action: string, label: string) {
+  const base = {
+    type: action,
+    projectId: p.id,
+    projectName: p.name,
+    action,
+    command: `${label} ${p.name}`,
+  };
+
+  if (p.id !== "topac") return base;
+
+  if (action === "analyze_and_patch") {
+    return {
+      ...base,
+      repository: TOPAC_REPOSITORY,
+      branch: "main",
+      filePath: TOPAC_CLIENTES_FILE,
+      commitMessage: "AI Factory: register real correction attempt for TOPAC billing clients",
+      replacements: [
+        {
+          search: "Cliente iniciado pelo Cadastro Inteligente. Envie o documento, confira os dados e salve somente após validação.",
+          replace: "Cliente iniciado pelo Cadastro Inteligente via AI Factory. Envie PDF, foto ou print, confira os dados e salve somente após validação.",
+        },
+      ],
+    };
+  }
+
+  return {
+    ...base,
+    repository: TOPAC_REPOSITORY,
+    branch: "main",
+    filePath: "ai-factory-logs/topac-execucao.md",
+    commitMessage: `AI Factory: ${label} TOPAC`,
+    content: `# Execução AI Factory - TOPAC RH\n\nAção: ${label}\nTipo: ${action}\nData: ${new Date().toISOString()}\nOrigem: AI Factory\n\nStatus: tarefa enviada pelo painel e registrada no repositório real.\n`,
+  };
+}
+
 function ProjectsPage() {
   useFactoryData();
   const [open, setOpen] = useState<Project | null>(null);
@@ -40,13 +81,7 @@ function ProjectsPage() {
 
   const runAction = async (p: Project, action: string, label: string) => {
     try {
-      const task = await sendToWorker({
-        type: action,
-        projectId: p.id,
-        projectName: p.name,
-        action,
-        command: `${label} ${p.name}`,
-      });
+      const task = await sendToWorker(buildTopacPayload(p, action, label));
       factoryData.addLog({ projectId: p.id, type: "system", level: "info", message: `${label} enviado ao worker: ${p.name}` });
       toast.success(`${label} enviado · ${String(task.id).slice(0, 6)}`);
       force((n) => n + 1);
@@ -72,7 +107,7 @@ function ProjectsPage() {
       </header>
 
       <div className="rounded-xl glass p-4 text-xs text-muted-foreground border border-primary/20">
-        Worker conectado em <span className="text-primary font-mono">{workerUrl()}</span> · botões enviam tarefas reais para a fila local.
+        Worker conectado em <span className="text-primary font-mono">{workerUrl()}</span> · TOPAC configurado para execução GitHub API no repo real.
       </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
