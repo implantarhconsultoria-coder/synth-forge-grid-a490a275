@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import http from "http";
 import { execSync } from "child_process";
 
 const ROOT = process.cwd();
@@ -8,6 +9,7 @@ const QUEUE_FILE = path.join(DATA_DIR, "execution-queue.json");
 const LOG_FILE = path.join(DATA_DIR, "execution-logs.json");
 const OUTPUT_DIR = path.join(ROOT, "factory-output");
 const BACKUP_DIR = path.join(ROOT, "factory-backups");
+const PORT = Number(process.env.FACTORY_PORT || 8787);
 
 function ensure() {
   fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -18,15 +20,18 @@ function ensure() {
 }
 
 function readJson(file, fallback = []) {
-  try {
-    return JSON.parse(fs.readFileSync(file, "utf8"));
-  } catch {
-    return fallback;
-  }
+  try { return JSON.parse(fs.readFileSync(file, "utf8")); } catch { return fallback; }
 }
+function writeJson(file, value) { fs.writeFileSync(file, JSON.stringify(value, null, 2)); }
 
-function writeJson(file, value) {
-  fs.writeFileSync(file, JSON.stringify(value, null, 2));
+function send(res, code, data) {
+  res.writeHead(code, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "GET,POST,OPTIONS",
+  });
+  res.end(JSON.stringify(data, null, 2));
 }
 
 function log(entry) {
@@ -41,7 +46,6 @@ function packageText(task) {
   const action = task.command || task.objective || task.action || "executar missão";
   const target = /supabase|banco|login|permiss|auth|tabela|rls/i.test(action) ? "Supabase" : /github|codigo|código|arquivo|worker|commit|repo/i.test(action) ? "GitHub/Codespaces" : "Lovable";
   const risk = /login|permiss|banco|financeiro|rh|sal[aá]rio|excluir|cliente|produção|producao/i.test(action) ? "ALTO - exige aprovação" : "MÉDIO";
-
   return [
     "PACOTE AI FACTORY - EXECUÇÃO CONTROLADA",
     `Projeto: ${project}`,
@@ -76,7 +80,6 @@ function backupFiles(projectRoot, files) {
   const stamp = new Date().toISOString().replace(/[:.]/g, "-");
   const targetDir = path.join(BACKUP_DIR, stamp);
   fs.mkdirSync(targetDir, { recursive: true });
-
   for (const file of files) {
     const source = path.join(projectRoot, file);
     if (!fs.existsSync(source)) continue;
@@ -84,29 +87,19 @@ function backupFiles(projectRoot, files) {
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     fs.copyFileSync(source, dest);
   }
-
   return targetDir;
 }
 
 function processTask(task) {
   log({ level: "info", taskId: task.id, message: `Processando tarefa: ${task.title || task.action || task.command}` });
-
   const output = packageText(task);
   const outputPath = path.join(OUTPUT_DIR, `${task.id}.txt`);
   fs.writeFileSync(outputPath, output);
-
   const backupDir = backupFiles(task.projectRoot, task.files || []);
-
   if (task.projectRoot && fs.existsSync(path.join(task.projectRoot, "package.json"))) {
-    try {
-      execSync("npm run build", { cwd: task.projectRoot, stdio: "inherit" });
-      log({ level: "ok", taskId: task.id, message: "Build validado com sucesso" });
-    } catch (error) {
-      log({ level: "error", taskId: task.id, message: `Build falhou: ${error.message}` });
-      throw error;
-    }
+    execSync("npm run build", { cwd: task.projectRoot, stdio: "inherit" });
+    log({ level: "ok", taskId: task.id, message: "Build validado com sucesso" });
   }
-
   return { outputPath, backupDir };
 }
 
@@ -115,19 +108,12 @@ function tick() {
   const queue = readJson(QUEUE_FILE, []);
   const next = [...queue];
   const task = next.find((item) => ["queued", "pending"].includes(item.status));
-
-  if (!task) {
-    console.log("Sem tarefas pendentes");
-    return;
-  }
-
+  if (!task) return;
   try {
     task.status = "processing";
     task.startedAt = new Date().toISOString();
     writeJson(QUEUE_FILE, next);
-
     const result = processTask(task);
-
     task.status = "done";
     task.finishedAt = new Date().toISOString();
     task.outputPath = result.outputPath;
@@ -143,9 +129,34 @@ function tick() {
   }
 }
 
+function startApi() {
+  http.createServer((req, res) => {
+    if (req.method === "OPTIONS") return send(res, 200, { ok: true });
+    if (req.method === "GET" && req.url === "/health") return send(res, 200, { ok: true, worker: "AI Factory Local", queue: readJson(QUEUE_FILE, []).length });
+    if (req.method === "GET" && req.url === "/queue") return send(res, 200, readJson(QUEUE_FILE, []));
+    if (req.method === "GET" && req.url === "/logs") return send(res, 200, readJson(LOG_FILE, []));
+    if (req.method === "POST" && req.url === "/queue") {
+      let body = "";
+      req.on("data", (chunk) => body += chunk);
+      req.on("end", () => {
+        const payload = body ? JSON.parse(body) : {};
+        const task = { id: crypto.randomUUID(), createdAt: new Date().toISOString(), status: "queued", ...payload };
+        const queue = readJson(QUEUE_FILE, []);
+        queue.unshift(task);
+        writeJson(QUEUE_FILE, queue);
+        log({ level: "info", taskId: task.id, message: `Tarefa recebida via API: ${task.projectName || task.project || task.action || "sem título"}` });
+        send(res, 201, task);
+      });
+      return;
+    }
+    return send(res, 404, { ok: false, error: "rota não encontrada" });
+  }).listen(PORT, "0.0.0.0", () => console.log(`API worker ativa na porta ${PORT}`));
+}
+
 ensure();
 console.log("AI Factory Worker LOCAL iniciado");
 console.log(`Fila: ${QUEUE_FILE}`);
 console.log(`Saídas: ${OUTPUT_DIR}`);
+startApi();
 tick();
-setInterval(tick, 10000);
+setInterval(tick, 5000);
