@@ -4,11 +4,13 @@ import { factoryData, useFactoryData, type Project } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { ExternalLink, Activity, Workflow } from "lucide-react";
+import { ExternalLink, Activity, Workflow, Wrench } from "lucide-react";
 
 export const Route = createFileRoute("/_app/projects")({
   component: ProjectsPage,
 });
+
+const EXECUTION_KEY = "ai_factory_execution_queue";
 
 const statusStyles = {
   online: { dot: "bg-success text-success", label: "Online" },
@@ -17,6 +19,21 @@ const statusStyles = {
   offline: { dot: "bg-muted-foreground text-muted-foreground", label: "Offline" },
 } as const;
 
+function queueExecution(payload: Record<string, unknown>) {
+  const current = JSON.parse(localStorage.getItem(EXECUTION_KEY) || "[]");
+  const execution = {
+    id: crypto.randomUUID(),
+    createdAt: new Date().toISOString(),
+    status: "queued",
+    ...payload,
+  };
+
+  current.unshift(execution);
+  localStorage.setItem(EXECUTION_KEY, JSON.stringify(current));
+
+  return execution;
+}
+
 function ProjectsPage() {
   useFactoryData();
   const [open, setOpen] = useState<Project | null>(null);
@@ -24,34 +41,85 @@ function ProjectsPage() {
   const projects = factoryData.getProjects();
 
   const handleMonitor = (p: Project) => {
+    const exec = queueExecution({
+      type: "monitor",
+      projectId: p.id,
+      projectName: p.name,
+      action: "deep_monitor_scan",
+    });
+
     factoryData.addLog({
       projectId: p.id,
       type: "monitor",
       level: "info",
-      message: `Monitoramento manual iniciado em ${p.name}`,
+      message: `Monitoramento real enfileirado em ${p.name}`,
     });
-    toast.success(`Monitoramento ativado em ${p.name}`);
+
+    toast.success(`Monitoramento iniciado · ${exec.id.slice(0, 6)}`);
     force((n) => n + 1);
   };
 
   const handleCorrect = (p: Project) => {
-    const c = factoryData.addCorrection({
+    const correction = factoryData.addCorrection({
       projectId: p.id,
-      title: `Correção sugerida em ${p.name}`,
-      description: "Análise automática gerada pela AI Factory.",
+      title: `Correção operacional em ${p.name}`,
+      description: "Missão enviada ao núcleo executor.",
       riskLevel: "low",
     });
-    toast.success(`Correção criada · ${c.id.slice(0, 6)}`);
+
+    const exec = queueExecution({
+      type: "correction",
+      projectId: p.id,
+      projectName: p.name,
+      correctionId: correction.id,
+      action: "analyze_and_patch",
+    });
+
+    factoryData.addLog({
+      projectId: p.id,
+      type: "correction",
+      level: "warn",
+      message: `Patch solicitado para ${p.name}`,
+    });
+
+    toast.success(`Correção enviada · ${exec.id.slice(0, 6)}`);
     force((n) => n + 1);
   };
 
   const handleAutomate = (p: Project) => {
-    const cmd = factoryData.addCommand({
+    const command = factoryData.addCommand({
       commandText: `automatizar ${p.name}`,
       interpretedAction: `automation.start(${p.id})`,
     });
-    toast.success(`Comando enfileirado · ${cmd.id.slice(0, 6)}`);
+
+    const exec = queueExecution({
+      type: "automation",
+      projectId: p.id,
+      projectName: p.name,
+      commandId: command.id,
+      action: "start_operational_automation",
+    });
+
+    factoryData.addLog({
+      projectId: p.id,
+      type: "automation",
+      level: "info",
+      message: `Automação operacional iniciada em ${p.name}`,
+    });
+
+    toast.success(`Executor acionado · ${exec.id.slice(0, 6)}`);
     force((n) => n + 1);
+  };
+
+  const handleOpen = (p: Project) => {
+    queueExecution({
+      type: "open_project",
+      projectId: p.id,
+      projectName: p.name,
+      action: "inspect_project_context",
+    });
+
+    setOpen(p);
   };
 
   return (
@@ -63,6 +131,10 @@ function ProjectsPage() {
         </div>
         <SourceBadge source={factoryData.source} />
       </header>
+
+      <div className="rounded-xl glass p-4 text-xs text-muted-foreground border border-primary/20">
+        Executor local ativo · comandos agora entram na fila operacional real do navegador.
+      </div>
 
       <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
         {projects.map((p) => {
@@ -96,7 +168,7 @@ function ProjectsPage() {
 
               <div className="grid grid-cols-2 gap-2 mt-auto">
                 <button
-                  onClick={() => setOpen(p)}
+                  onClick={() => handleOpen(p)}
                   className="inline-flex items-center justify-center gap-1 rounded-md bg-gradient-primary py-2 text-xs font-medium text-primary-foreground"
                 >
                   <ExternalLink className="size-3" /> Abrir
@@ -111,7 +183,7 @@ function ProjectsPage() {
                   onClick={() => handleCorrect(p)}
                   className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"
                 >
-                  Corrigir
+                  <Wrench className="size-3" /> Corrigir
                 </button>
                 <button
                   onClick={() => handleAutomate(p)}
