@@ -510,6 +510,9 @@ export const factoryData = {
       unsub.forEach((u) => u && u());
       clearInterval(id);
     };
+  },
+
+  async saveMemory(payload: { key: string; value: string }) {
     const inserted = await supabaseApi.insertMemory({ key: payload.key, value: payload.value });
     if (inserted) {
       const m = normalizeMemory(inserted);
