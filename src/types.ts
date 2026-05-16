@@ -2,8 +2,8 @@
 export interface Employee {
   id: string;
   name?: string;
-  vrValue?: number;
-  vtValue?: number;
+  vrValue: number;
+  vtValue: number;
   [key: string]: any;
 }
 export interface Absence {
