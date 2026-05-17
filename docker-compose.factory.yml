@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  ai-factory-worker:
+    image: node:22
+    container_name: ai-factory-worker
+    working_dir: /app
+    volumes:
+      - ./:/app
+      - ./factory-data:/app/factory-data
+      - ./factory-output:/app/factory-output
+      - ./factory-backups:/app/factory-backups
+    command: sh -c "npm install && npm run factory:start"
+    ports:
+      - "8787:8787"
+    restart: always
+    environment:
+      FACTORY_AUTOPILOT: 'true'
+      FACTORY_PORT: 8787
+      NODE_ENV: production
+      GITHUB_TOKEN: ${GITHUB_TOKEN}
+
+  ai-factory-watchdog:
+    image: alpine
+    container_name: ai-factory-watchdog
+    restart: always
+    depends_on:
+      - ai-factory-worker
+    command: sh -c "while true; do sleep 60; done"
