@@ -1,5 +1,31 @@
 [
   {
+    "id": "84fd48f2-d39d-44f1-b806-188de3b8b9ba",
+    "createdAt": "2026-05-17T22:37:09.407Z",
+    "level": "ok",
+    "message": "Run once finalizado."
+  },
+  {
+    "id": "0c1932c8-deec-417a-904a-3a734af42dd8",
+    "createdAt": "2026-05-17T22:37:09.400Z",
+    "level": "ok",
+    "taskId": "pulzr-mobile-share-fix-2026-05-17",
+    "message": "Tarefa concluída pela Factory PRO."
+  },
+  {
+    "id": "0379f546-8841-4a34-881d-14ae484eb213",
+    "createdAt": "2026-05-17T22:37:09.397Z",
+    "level": "info",
+    "taskId": "pulzr-mobile-share-fix-2026-05-17",
+    "message": "Processando: edit_project"
+  },
+  {
+    "id": "417b2de5-3a2d-4a77-9d7b-68029f54046e",
+    "createdAt": "2026-05-17T22:37:09.391Z",
+    "level": "info",
+    "message": "Run once ativado pelo GitHub Actions."
+  },
+  {
     "id": "1725aef7-e212-44ff-b646-4bb8a19639c6",
     "createdAt": "2026-05-17T21:38:55.082Z",
     "level": "ok",

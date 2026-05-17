@@ -1,0 +1,13 @@
+AI FACTORY PRO EXECUTION PACKET
+Projeto: PULZR
+Tarefa: pulzr-mobile-share-fix-2026-05-17
+Prioridade: critical
+
+Objetivo:
+Corrigir agora o PULZR real com dominio conectado. A tela de compartilhar/rotina esta cortando o conteudo no iPhone: o campo Foco aparece estourado como 'Consistenc' e a foto/capa esta comendo informacoes. Corrigir safe area, overflow horizontal e responsividade. Foco deve ser opcional e editavel. Ajustar pagamento/assinatura. Nao mexer em projeto duplicado, somente no PULZR correto com dominio.
+
+Guardrails:
+- Não refazer projeto do zero.
+- Não quebrar login, permissões, menus ou dados existentes.
+- Mudanças pequenas, auditáveis e reversíveis.
+- Produção sensível pede aprovação humana.
