@@ -1,0 +1,31 @@
+{
+  "mode": "natural_language_to_execution",
+  "examples": [
+    {
+      "input": "arruma a tela do pulzr",
+      "project": "PULZR",
+      "action": "ui_fix"
+    },
+    {
+      "input": "corrige o worker offline",
+      "project": "AI_FACTORY",
+      "action": "infrastructure_fix"
+    },
+    {
+      "input": "cria tela nova de corrida",
+      "project": "PULZR",
+      "action": "feature_creation"
+    }
+  ],
+  "routing": {
+    "ui_fix": "frontend_executor",
+    "feature_creation": "feature_executor",
+    "github_commit": "github_executor",
+    "infrastructure_fix": "ops_executor"
+  },
+  "output": {
+    "createMission": true,
+    "priority": "auto",
+    "requiresReview": "conditional"
+  }
+}
