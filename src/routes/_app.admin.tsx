@@ -90,7 +90,7 @@ function AdminPage() {
   const criticalTasks = tasks.filter((t) => ["critico", "crítico", "critical"].includes(t.priority?.toLowerCase())).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24 lg:pb-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs">
@@ -112,7 +112,7 @@ function AdminPage() {
           <Input value={pName} onChange={setPName} placeholder="Nome do projeto" />
           <Input value={pCat} onChange={setPCat} placeholder="Categoria" />
           <Textarea value={pDesc} onChange={setPDesc} placeholder="Descrição" />
-          <button className="w-full rounded-md bg-gradient-primary py-2 text-sm font-medium text-primary-foreground">
+          <button className="w-full min-h-12 rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_20px_rgba(56,189,248,0.28)] active:scale-[0.98]">
             Registrar projeto
           </button>
         </form>
@@ -123,7 +123,7 @@ function AdminPage() {
           </div>
           <Input value={mTitle} onChange={setMTitle} placeholder="Título da missão" />
           <Textarea value={mDesc} onChange={setMDesc} placeholder="Objetivo" />
-          <button className="w-full rounded-md bg-gradient-primary py-2 text-sm font-medium text-primary-foreground">
+          <button className="w-full min-h-12 rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_20px_rgba(56,189,248,0.28)] active:scale-[0.98]">
             Disparar missão
           </button>
         </form>
@@ -134,7 +134,7 @@ function AdminPage() {
           </div>
           <Input value={memKey} onChange={setMemKey} placeholder="Chave (ex: regra-financeiro)" />
           <Textarea value={memVal} onChange={setMemVal} placeholder="Conteúdo da memória" />
-          <button className="w-full rounded-md bg-gradient-primary py-2 text-sm font-medium text-primary-foreground">
+          <button className="w-full min-h-12 rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_20px_rgba(56,189,248,0.28)] active:scale-[0.98]">
             Salvar memória
           </button>
         </form>
@@ -144,7 +144,7 @@ function AdminPage() {
             <FileText className="size-4 text-primary" /> Log manual
           </div>
           <Textarea value={logMsg} onChange={setLogMsg} placeholder="Mensagem do log" />
-          <button className="w-full rounded-md bg-gradient-primary py-2 text-sm font-medium text-primary-foreground">
+          <button className="w-full min-h-12 rounded-xl bg-gradient-to-r from-primary to-accent py-3 text-sm font-bold text-primary-foreground shadow-[0_6px_20px_rgba(56,189,248,0.28)] active:scale-[0.98]">
             Registrar log
           </button>
         </form>

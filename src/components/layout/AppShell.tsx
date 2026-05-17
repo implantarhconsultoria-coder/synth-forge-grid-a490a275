@@ -49,7 +49,7 @@ export function AppShell() {
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <div className="h-full glass border-r border-border/60 flex flex-col">
+        <div className="h-full flex flex-col bg-[#050b18] border-r border-primary/20 shadow-[12px_0_60px_rgba(0,0,0,0.6)]">
           <div className="px-5 py-5 border-b border-border/60">
             <Link to="/" className="flex items-center gap-3">
               <div className="relative size-9 rounded-lg bg-gradient-primary grid place-items-center glow-border">
@@ -101,7 +101,7 @@ export function AppShell() {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-background/70 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}

@@ -64,30 +64,83 @@ select {
 @media (max-width: 1023px) {
   aside {
     width: min(84vw, 18rem) !important;
+    background: #050b18 !important;
+    backdrop-filter: none !important;
+  }
+
+  aside > div {
+    background: #050b18 !important;
+    backdrop-filter: none !important;
+    border-right: 1px solid rgba(94, 205, 255, 0.22) !important;
+    box-shadow: 12px 0 60px rgba(0, 0, 0, 0.6) !important;
   }
 
   header {
     height: 3.75rem !important;
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
+    background: rgba(5, 11, 24, 0.96) !important;
+    backdrop-filter: blur(14px) !important;
   }
 
   main {
     width: 100% !important;
     max-width: 100% !important;
-    padding: 1rem !important;
+    padding: 1.25rem 1.15rem 7.5rem !important;
   }
 
   main h1 {
-    font-size: clamp(2.25rem, 12vw, 3.4rem) !important;
-    line-height: 0.95 !important;
+    font-size: clamp(2rem, 9.5vw, 3.2rem) !important;
+    line-height: 1 !important;
+    letter-spacing: -0.02em !important;
+    word-break: break-word !important;
   }
 
   main section {
     max-width: 100% !important;
   }
 
-  main button {
-    min-height: 44px;
+  main button,
+  main a[role="button"] {
+    min-height: 48px;
+    font-weight: 600;
+  }
+
+  /* Buttons must always be legible — never invisible */
+  main button:not(:disabled) {
+    color: #ffffff !important;
+    opacity: 1 !important;
+  }
+
+  main button:disabled {
+    opacity: 0.65 !important;
+    color: rgba(255, 255, 255, 0.85) !important;
+  }
+
+  /* Gradient/primary buttons get proper glow */
+  main button[class*="gradient-primary"],
+  main .bg-gradient-primary {
+    background: linear-gradient(135deg, #38bdf8, #8b5cf6) !important;
+    color: #04111f !important;
+    box-shadow: 0 8px 24px rgba(56, 189, 248, 0.28) !important;
+  }
+
+  /* Secondary/glass buttons get visible neon border */
+  main button.glass,
+  main .glass button,
+  main button[class*="glass"] {
+    border: 1px solid rgba(94, 205, 255, 0.32) !important;
+    color: #f8fbff !important;
+  }
+
+  /* Cards never touch the edge */
+  main article,
+  main .glass {
+    border-radius: 20px;
+  }
+
+  /* Bottom nav safety */
+  nav.lg\\:hidden {
+    background: rgba(5, 11, 24, 0.98) !important;
   }
 }
