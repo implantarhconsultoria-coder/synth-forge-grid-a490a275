@@ -1,5 +1,18 @@
 [
   {
+    "id": "pulzr-mobile-share-fix-2026-05-17",
+    "status": "queued",
+    "priority": "critical",
+    "type": "lovable_project",
+    "action": "edit_project",
+    "projectName": "PULZR",
+    "platform": "Lovable",
+    "command": "Corrigir agora o PULZR real com dominio conectado. A tela de compartilhar/rotina esta cortando o conteudo no iPhone: o campo Foco aparece estourado como 'Consistenc' e a foto/capa esta comendo informacoes. Corrigir safe area, overflow horizontal e responsividade. Foco deve ser opcional e editavel. Ajustar pagamento/assinatura. Nao mexer em projeto duplicado, somente no PULZR correto com dominio.",
+    "prompt": "TITULO: PULZR — CORRECAO URGENTE MOBILE, FOTO, FOCO E PAGAMENTO\n\nMISSÃO: Aplicar no PULZR correto, o projeto com dominio conectado, sem mexer em copia antiga.\n\nPROBLEMAS VISIVEIS NA FOTO:\n1. Tela de rotina/share esta cortando informacoes no topo e na lateral.\n2. Texto do foco esta vazando/cortado: 'Consistenc'.\n3. Foto/capa esta ocupando area demais e escondendo informacoes.\n4. Layout esta estourando no iPhone.\n5. Foco nao pode ser fixo, precisa ser opcional e editavel.\n6. Pagamento ainda precisa ficar funcional e claro.\n\nCORRIGIR MOBILE/SAFE AREA:\n- aplicar padding-top com env(safe-area-inset-top) em todas as telas;\n- garantir que nada fique atras do relogio, notch ou dynamic island;\n- remover overflow horizontal global;\n- body, html e root com width 100%, max-width 100vw e overflow-x hidden;\n- todos cards, botoes, imagens e containers com max-width 100%;\n- textos grandes com clamp() e quebra correta;\n- nunca usar width fixa maior que a tela;\n- testar em iPhone.\n\nCORRIGIR TELA DA FOTO/ROTINA:\n- reduzir altura da area de capa no mobile;\n- adicionar overlay escuro para legibilidade;\n- texto sempre acima da foto e legivel;\n- linha 'Foco' deve caber inteira ou quebrar em duas linhas;\n- se foco for longo, usar ellipsis apenas em card pequeno, mas tela de edicao deve mostrar completo;\n- botoes Camera, Galeria e Sem foto dentro da largura sem estourar.\n\nFOCO OPCIONAL E EDITAVEL:\n- criar botao Editar foco;\n- permitir Sem foco;\n- opcoes: Consistencia, Performance, Emagrecimento, Resistencia, Saude, Bem-estar, Forca;\n- permitir texto personalizado;\n- salvar no perfil/localStorage/Supabase conforme estrutura atual;\n- atualizar a tela imediatamente apos salvar.\n\nPAGAMENTO:\n- corrigir tela de planos;\n- Free, Premium mensal e Premium anual;\n- botoes claros: Usar gratis, Assinar mensal, Assinar anual;\n- PIX e cartao;\n- se integracao real ainda nao existir, criar fluxo preparado com status 'configurar gateway' sem botao fake;\n- nao prometer cobranca real se gateway nao estiver conectado.\n\nNAO FAZER:\n- nao refazer app do zero;\n- nao mudar identidade visual aprovada;\n- nao remover dominio;\n- nao quebrar corrida, home, perfil ou historico;\n- nao mexer em outro projeto.\n\nVALIDACAO FINAL:\n- abrir no iPhone;\n- conferir que nao existe corte lateral;\n- foco aparece completo/editavel;\n- foto nao cobre informacoes;\n- pagamento abre corretamente;\n- sem overflow horizontal.",
+    "createdAt": "2026-05-17T19:23:00.000Z",
+    "source": "chatgpt_user_image_request"
+  },
+  {
     "id": "auto-excellence-operational-map",
     "status": "error",
     "priority": "high",
