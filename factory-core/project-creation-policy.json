@@ -1,0 +1,21 @@
+{
+  "policy": "GITHUB_FIRST",
+  "rule": "Todo novo projeto criado pela AI Factory deve ter repositorio GitHub antes de ir para Lovable.",
+  "requiredFlow": [
+    "identificar_repositorio_github",
+    "registrar_project_id_e_repo_na_factory",
+    "criar_projeto_visual",
+    "executar_alteracoes_futuras_pelo_github",
+    "sincronizar_logs_e_commits_no_painel_factory"
+  ],
+  "blockedFlow": [
+    "criar_projeto_visual_sem_repo",
+    "projeto_sem_rastreio_github",
+    "alteracao_manual_sem_commit"
+  ],
+  "videoHub": {
+    "lovableProjectId": "eacb99bd-89b7-489b-b89e-eec47c881cf1",
+    "status": "precisa_vincular_repositorio",
+    "nextAction": "migrar_para_repositorio_controlado_pela_factory"
+  }
+}
