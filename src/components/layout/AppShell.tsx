@@ -101,7 +101,7 @@ export function AppShell() {
 
       {mobileOpen && (
         <div
-          className="fixed inset-0 z-30 bg-background/70 lg:hidden"
+          className="fixed inset-0 z-30 bg-black/70 backdrop-blur-sm lg:hidden"
           onClick={() => setMobileOpen(false)}
         />
       )}
