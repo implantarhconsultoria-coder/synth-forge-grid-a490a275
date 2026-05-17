@@ -14,12 +14,13 @@ const AUTOPILOT_FILE = path.join(DATA_DIR, "autopilot.json");
 const PORT = Number(process.env.FACTORY_PORT || 8787);
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN || process.env.GH_TOKEN || "";
 const AUTOPILOT_DEFAULT = process.env.FACTORY_AUTOPILOT !== "false";
+const RUN_ONCE = process.env.FACTORY_RUN_ONCE === "true";
 
 const HEARTBEAT = {
   startedAt: new Date().toISOString(),
   lastCycle: null,
   cycles: 0,
-  mode: "AUTOPILOT_PRO",
+  mode: RUN_ONCE ? "GITHUB_ACTIONS_RUN_ONCE" : "AUTOPILOT_PRO",
   excellence: true,
 };
 
@@ -80,7 +81,7 @@ function statusPayload() {
     ok: true,
     worker: "AI Factory Local",
     status: "online",
-    mode: "AUTOPILOT_PRO_EXCELLENCE",
+    mode: RUN_ONCE ? "GITHUB_ACTIONS_RUN_ONCE" : "AUTOPILOT_PRO_EXCELLENCE",
     autopilot: getAutopilot().enabled ? "ativo" : "pausado",
     executorGithub: Boolean(GITHUB_TOKEN),
     heartbeat: HEARTBEAT,
@@ -129,12 +130,12 @@ function sortQueue(queue = []) {
 
 function selfHealQueue() {
   const queue = readJson(QUEUE_FILE, []);
-  const now = Date.now();
+  const nowMs = Date.now();
   let changed = false;
   for (const task of queue) {
     if (task.status === "processing") {
-      const started = new Date(task.startedAt || now).getTime();
-      if (now - started > 1000 * 60 * 10) {
+      const started = new Date(task.startedAt || nowMs).getTime();
+      if (nowMs - started > 1000 * 60 * 10) {
         task.status = "queued";
         task.recoveredAt = new Date().toISOString();
         task.recoveryReason = "watchdog_auto_recovery";
@@ -382,12 +383,24 @@ function startApi() {
   }).listen(PORT, "0.0.0.0", () => console.log(`API worker ativa na porta ${PORT}`));
 }
 
-ensure();
-console.log("AI Factory Worker PRO iniciado");
-console.log(`Fila: ${QUEUE_FILE}`);
-console.log(`Saídas: ${OUTPUT_DIR}`);
-console.log(`Executor GitHub: ${GITHUB_TOKEN ? "ativo" : "sem token"}`);
-console.log(`Autopilot PRO: ${getAutopilot().enabled ? "ativo" : "pausado"}`);
-startApi();
-void tick();
-setInterval(() => void tick(), 5000);
+async function boot() {
+  ensure();
+  console.log("AI Factory Worker PRO iniciado");
+  console.log(`Fila: ${QUEUE_FILE}`);
+  console.log(`Saídas: ${OUTPUT_DIR}`);
+  console.log(`Executor GitHub: ${GITHUB_TOKEN ? "ativo" : "sem token"}`);
+  console.log(`Autopilot PRO: ${getAutopilot().enabled ? "ativo" : "pausado"}`);
+
+  if (RUN_ONCE) {
+    log({ level: "info", message: "Run once ativado pelo GitHub Actions." });
+    await tick();
+    log({ level: "ok", message: "Run once finalizado." });
+    return;
+  }
+
+  startApi();
+  await tick();
+  setInterval(() => void tick(), 5000);
+}
+
+void boot();
