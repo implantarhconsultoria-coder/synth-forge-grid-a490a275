@@ -1,0 +1,22 @@
+{
+  "runtime": "production",
+  "worker": {
+    "required": true,
+    "persistent": true,
+    "healthcheck": "/status",
+    "restart_policy": "always"
+  },
+  "checks": {
+    "github": true,
+    "supabase": true,
+    "queue": true,
+    "logs": true,
+    "heartbeat": true
+  },
+  "recovery": {
+    "auto_restart": true,
+    "watchdog": true,
+    "queue_recovery": true,
+    "self_healing": true
+  }
+}
