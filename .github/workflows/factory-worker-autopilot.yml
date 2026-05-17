@@ -1,0 +1,49 @@
+name: AI Factory Worker Autopilot
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  factory-worker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout AI Factory
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run one Factory cycle
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FACTORY_AUTOPILOT: 'true'
+          FACTORY_RUN_ONCE: 'true'
+        run: npm run factory:start
+
+      - name: Commit Factory state
+        if: always()
+        run: |
+          git config user.name "AI Factory Bot"
+          git config user.email "actions@github.com"
+          git add factory-data factory-output factory-backups docs || true
+          if git diff --cached --quiet; then
+            echo "No Factory state changes"
+          else
+            git commit -m "AI Factory: atualizar estado do worker"
+            git push
+          fi
