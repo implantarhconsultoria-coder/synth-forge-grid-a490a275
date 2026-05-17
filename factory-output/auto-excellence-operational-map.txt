@@ -1,0 +1,13 @@
+AI FACTORY PRO EXECUTION PACKET
+Projeto: TOPAC RH
+Tarefa: auto-excellence-operational-map
+Prioridade: high
+
+Objetivo:
+Criar mapa vivo de excelência operacional para módulos, riscos, próximos ciclos e melhorias contínuas.
+
+Guardrails:
+- Não refazer projeto do zero.
+- Não quebrar login, permissões, menus ou dados existentes.
+- Mudanças pequenas, auditáveis e reversíveis.
+- Produção sensível pede aprovação humana.

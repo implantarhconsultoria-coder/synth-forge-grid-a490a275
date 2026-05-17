@@ -1,0 +1,19 @@
+[
+  {
+    "id": "auto-excellence-operational-map",
+    "status": "error",
+    "priority": "high",
+    "type": "github_commit",
+    "projectName": "TOPAC RH",
+    "repository": "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5",
+    "filePath": "docs/AI_FACTORY_EXCELLENCE_MAP.md",
+    "commitMessage": "AI Factory PRO: criar mapa de excelência operacional",
+    "command": "Criar mapa vivo de excelência operacional para módulos, riscos, próximos ciclos e melhorias contínuas.",
+    "content": "# AI Factory PRO - Excellence Map\n\nModo: Autopilot PRO\n\n## Prioridade imediata\n- Faturamento > Clientes\n- Cadastro Inteligente\n- Evolução incremental sem quebrar cadastro manual\n\n## Ciclo operacional\n1. Mapear telas e arquivos.\n2. Criar pequenas melhorias seguras.\n3. Registrar commit auditável.\n4. Separar tarefas sensíveis para aprovação.\n5. Manter build e navegação estáveis.\n\n## Guardrails\n- Não alterar login/permissões sem aprovação.\n- Não remover dados.\n- Não reescrever projeto do zero.\n- Toda mudança deve ser pequena, reversível e registrada.\n\nGerado automaticamente pela AI Factory PRO.\n",
+    "createdAt": "2026-05-17T05:01:16.806Z",
+    "autopilot": true,
+    "startedAt": "2026-05-17T05:01:16.807Z",
+    "error": "Not Found",
+    "finishedAt": "2026-05-17T05:01:17.190Z"
+  }
+]
