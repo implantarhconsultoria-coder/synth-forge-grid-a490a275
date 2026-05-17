@@ -90,7 +90,7 @@ function AdminPage() {
   const criticalTasks = tasks.filter((t) => ["critico", "crítico", "critical"].includes(t.priority?.toLowerCase())).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-24 lg:pb-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1 text-xs">
