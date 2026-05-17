@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ai-factory-worker
+    env: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /status
+    envVars:
+      - key: FACTORY_AUTOPILOT
+        value: true
+      - key: NODE_ENV
+        value: production
+      - key: FACTORY_PORT
+        value: 8787
