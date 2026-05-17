@@ -100,11 +100,11 @@ function ProjectsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-24 lg:pb-8">
       <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Projetos</h1>
-          <p className="text-muted-foreground mt-1">Ecossistema operacional sob comando do núcleo IA.</p>
+        <div className="min-w-0">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Projetos</h1>
+          <p className="text-muted-foreground mt-2 text-sm sm:text-base">Ecossistema operacional sob comando do núcleo IA.</p>
         </div>
         <SourceBadge source={factoryData.source} />
       </header>
@@ -117,27 +117,27 @@ function ProjectsPage() {
         {projects.map((p) => {
           const s = statusStyles[p.status];
           return (
-            <article key={p.id} className="rounded-xl glass p-5 flex flex-col gap-4 hover:glow-border transition-shadow">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="text-xs uppercase tracking-wider text-muted-foreground">{p.category}</div>
-                  <h2 className="text-lg font-semibold mt-1">{p.name}</h2>
+            <article key={p.id} className="rounded-2xl glass p-5 flex flex-col gap-4 border border-border/40 hover:border-primary/40 transition-colors">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{p.category}</div>
+                  <h2 className="text-lg font-semibold mt-1 truncate">{p.name}</h2>
                 </div>
-                <div className="flex flex-col items-end gap-1.5">
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <span className="inline-flex items-center gap-2 text-xs"><span className={`size-2 rounded-full pulse-dot ${s.dot}`} />{s.label}</span>
                   <SourceBadge source={p.source} />
                 </div>
               </div>
-              <p className="text-sm text-muted-foreground">{p.description}</p>
+              <p className="text-sm text-muted-foreground line-clamp-3">{p.description}</p>
               <div>
                 <div className="flex justify-between text-xs"><span className="text-muted-foreground">Progresso</span><span className="font-mono">{p.progress}%</span></div>
-                <div className="mt-1 h-1.5 rounded-full bg-secondary overflow-hidden"><div className="h-full bg-gradient-primary" style={{ width: `${p.progress}%` }} /></div>
+                <div className="mt-1.5 h-2 rounded-full bg-secondary overflow-hidden"><div className="h-full bg-gradient-to-r from-primary to-accent" style={{ width: `${p.progress}%` }} /></div>
               </div>
               <div className="grid grid-cols-2 gap-2 mt-auto">
-                <button onClick={() => handleOpen(p)} className="inline-flex items-center justify-center gap-1 rounded-md bg-gradient-primary py-2 text-xs font-medium text-primary-foreground"><ExternalLink className="size-3" /> Abrir</button>
-                <button onClick={() => runAction(p, "deep_monitor_scan", "Monitorar")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Activity className="size-3" /> Monitorar</button>
-                <button onClick={() => runAction(p, "analyze_and_patch", "Corrigir")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Wrench className="size-3" /> Corrigir</button>
-                <button onClick={() => runAction(p, "start_operational_automation", "Automatizar")} className="inline-flex items-center justify-center gap-1 rounded-md glass py-2 text-xs hover:text-primary"><Workflow className="size-3" /> Automatizar</button>
+                <button onClick={() => handleOpen(p)} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-primary to-accent text-primary-foreground text-xs font-bold shadow-[0_6px_20px_rgba(56,189,248,0.28)] active:scale-[0.98]"><ExternalLink className="size-3.5" /> Abrir</button>
+                <button onClick={() => runAction(p, "deep_monitor_scan", "Monitorar")} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl glass border border-primary/30 text-xs font-semibold text-foreground hover:border-primary/60"><Activity className="size-3.5 text-primary" /> Monitorar</button>
+                <button onClick={() => runAction(p, "analyze_and_patch", "Corrigir")} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl glass border border-accent/30 text-xs font-semibold text-foreground hover:border-accent/60"><Wrench className="size-3.5 text-accent" /> Corrigir</button>
+                <button onClick={() => runAction(p, "start_operational_automation", "Automatizar")} className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl glass border border-primary/30 text-xs font-semibold text-foreground hover:border-primary/60"><Workflow className="size-3.5 text-primary" /> Automatizar</button>
               </div>
             </article>
           );
