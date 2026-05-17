@@ -1,0 +1,32 @@
+{
+  "name": "Lovable Bridge Executor",
+  "version": "1.0.0",
+  "status": "bridge_mode",
+  "objective": "Permitir que a AI Factory processe tarefas destinadas ao Lovable de forma automatizada.",
+  "pipeline": {
+    "step_1": "Receber linguagem natural do usuario",
+    "step_2": "Identificar projeto alvo",
+    "step_3": "Transformar pedido em tarefa estruturada",
+    "step_4": "Validar se existe projectId e repositorio",
+    "step_5": "Executar alteracoes via GitHub quando houver repo conectado",
+    "step_6": "Sincronizar logs, commits e status no painel"
+  },
+  "lovable": {
+    "requiresProjectId": true,
+    "requiresWorkspace": true,
+    "preferredFlow": "github_connected_projects",
+    "fallbackFlow": "manual_prompt_generation"
+  },
+  "autoMissionExamples": [
+    "arruma overflow iphone do pulzr",
+    "corrige assinatura premium",
+    "adiciona gps tela bloqueada",
+    "cria home nova do nexus"
+  ],
+  "executionRules": {
+    "never_fake_completion": true,
+    "require_real_commit_when_possible": true,
+    "queue_all_operations": true,
+    "log_every_execution": true
+  }
+}
