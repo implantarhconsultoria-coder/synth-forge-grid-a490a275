@@ -1,0 +1,36 @@
+{
+  "name": "AI Factory Autonomous Mission Router",
+  "goal": "Permitir que o usuario escreva um pedido simples e a Factory transforme em acao executavel sem depender de copiar prompt manualmente.",
+  "inputMode": "natural_language",
+  "expectedUserFlow": [
+    "usuario escreve pedido no painel Factory",
+    "Factory identifica projeto, plataforma, risco e executor",
+    "Factory cria tarefa estruturada",
+    "Factory executa quando houver executor disponivel",
+    "Factory registra logs reais, commits reais e status final"
+  ],
+  "executors": {
+    "github": {
+      "status": "real",
+      "canExecute": ["create_file", "update_file", "delete_file", "commit", "queue", "audit"],
+      "requires": ["repository", "filePath", "content_or_replacements"]
+    },
+    "lovable": {
+      "status": "needs_bridge",
+      "canExecuteNowInsideChatGPT": true,
+      "canExecuteInsideFactoryWorker": false,
+      "requiredToEnable": ["official_api_or_webhook", "lovable_project_id", "workspace_id", "auth_token"]
+    },
+    "supabase": {
+      "status": "planned_guarded",
+      "requiresApproval": true
+    }
+  },
+  "rules": [
+    "Nao registrar como concluido sem execucao real.",
+    "Nao chamar pacote gerado de projeto criado.",
+    "Se executor nao existir, marcar como aguardando_conector.",
+    "Se for GitHub com dados suficientes, executar direto.",
+    "Se for Lovable sem ponte autorizada, pedir vinculacao ou acionar conector externo."
+  ]
+}
