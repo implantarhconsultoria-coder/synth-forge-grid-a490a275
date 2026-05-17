@@ -1,5 +1,17 @@
 [
   {
+    "id": "cedd6a9e-fe77-47ce-a93a-311676f85d16",
+    "createdAt": "2026-05-17T17:04:35.526Z",
+    "level": "ok",
+    "message": "Run once finalizado."
+  },
+  {
+    "id": "00585940-600c-4dbc-b8f7-6a084d7779a4",
+    "createdAt": "2026-05-17T17:04:35.525Z",
+    "level": "info",
+    "message": "Run once ativado pelo GitHub Actions."
+  },
+  {
     "id": "27e602d9-5906-4efa-bbcd-7da2213768e7",
     "createdAt": "2026-05-17T15:58:15.911Z",
     "level": "ok",
