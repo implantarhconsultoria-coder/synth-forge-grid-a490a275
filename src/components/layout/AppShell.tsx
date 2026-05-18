@@ -4,7 +4,6 @@ import {
   ListChecks,
   Settings,
   Activity,
-  Sparkles,
   RefreshCw,
   Menu,
 } from "lucide-react";
@@ -12,6 +11,7 @@ import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { FactoryFab } from "@/components/FactoryFab";
+import aiFactoryLogo from "@/assets/ai-factory-logo.png";
 
 const NAV = [
   { to: "/", label: "Missão", icon: Rocket },
