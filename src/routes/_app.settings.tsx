@@ -287,6 +287,15 @@ function SettingsPage() {
           </Field>
         </div>
 
+        <div className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${statusColor}`}>
+          <span className="font-semibold tracking-wider">{statusLabel}</span>
+          {workerStatus && !testingWorker && (
+            <span className="opacity-70">
+              {new Date(workerStatus.at).toLocaleTimeString("pt-BR")}
+            </span>
+          )}
+        </div>
+
         <button
           onClick={testWorker}
           disabled={testingWorker}
