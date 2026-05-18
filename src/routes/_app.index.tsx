@@ -4,7 +4,7 @@ import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { MissionModal } from "@/components/MissionModal";
 import {
-  Activity, Radio, Rocket, ListChecks, ArrowUpRight,
+  Activity, Radio, Rocket, ListChecks, Settings as SettingsIcon, ArrowUpRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
@@ -31,16 +31,15 @@ function CommandCenter() {
   useFactoryData();
   const [missionOpen, setMissionOpen] = useState(false);
   const clock = useClock();
-  const stats = factoryData.getStats();
   const logs = factoryData.getLogs().slice(0, 8);
 
   useEffect(() => {
     const id = setInterval(() => {
       const msgs = [
         "Núcleo IA processou eventos",
-        "Forge preparou nova estrutura",
-        "Doctor escaneou projetos",
-        "Connect validou integração",
+        "Worker sincronizou fila",
+        "Missão concluída",
+        "Heartbeat OK",
       ];
       const levels = ["ok", "info", "warn"] as const;
       factoryData.addLog({
@@ -52,19 +51,13 @@ function CommandCenter() {
     return () => clearInterval(id);
   }, []);
 
-  const cards = [
-    { label: "Projetos", value: stats.projectsConnected, delta: "conectados", tone: "text-primary" },
-    { label: "Online", value: stats.projectsOnline, delta: "99.98% uptime", tone: "text-success" },
-    { label: "Correções", value: stats.corrections, delta: "geradas", tone: "text-accent" },
-    { label: "Alertas", value: stats.alertsActive, delta: `${stats.alertsCritical} críticos`, tone: "text-warning" },
-  ];
-
   const quickActions: Array<{
     label: string; sub: string; icon: any; to?: string; onClick?: () => void; primary?: boolean;
   }> = [
     { label: "Iniciar missão", sub: "Enviar ao núcleo IA", icon: Rocket, onClick: () => setMissionOpen(true), primary: true },
-    { label: "Fila", sub: "Missões e comandos", icon: ListChecks, to: "/queue" },
-    { label: "Logs", sub: "Eventos em tempo real", icon: Activity, to: "/logs" },
+    { label: "Ver fila", sub: "Missões enfileiradas", icon: ListChecks, to: "/queue" },
+    { label: "Logs", sub: "Eventos ao vivo", icon: Activity, to: "/logs" },
+    { label: "Configurações", sub: "Worker · Notificações", icon: SettingsIcon, to: "/settings" },
   ];
 
   return (
@@ -115,19 +108,8 @@ function CommandCenter() {
         </div>
       </section>
 
-      {/* STATS */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
-        {cards.map((c) => (
-          <div key={c.label} className="glass min-h-28 rounded-2xl p-4 border border-border/40 hover:border-primary/40 transition">
-            <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{c.label}</div>
-            <div className="mt-2 font-mono text-3xl sm:text-4xl font-bold">{c.value}</div>
-            <div className={`mt-1 text-xs sm:text-sm ${c.tone}`}>{c.delta}</div>
-          </div>
-        ))}
-      </section>
-
       {/* QUICK ACTIONS */}
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {quickActions.map((a) => {
           const Icon = a.icon;
           const cls = a.primary

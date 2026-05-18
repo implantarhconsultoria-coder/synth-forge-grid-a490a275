@@ -2,15 +2,15 @@ import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   Rocket,
   ListChecks,
-  Activity,
   Settings,
+  Activity,
   Sparkles,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
-import { ensureServiceWorker, startWorkerMonitor, type WorkerStatus } from "@/lib/notifications";
 
 const NAV = [
   { to: "/", label: "Missão", icon: Rocket },
@@ -23,15 +23,12 @@ export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
-  const [worker, setWorker] = useState<WorkerStatus>("unknown");
   useFactoryData();
   useEffect(() => {
     void factoryData.hydrate();
-    void ensureServiceWorker();
     const stop = factoryData.startRealtime();
-    const stopWorker = startWorkerMonitor(setWorker);
     const t = setInterval(() => setNow(new Date()), 1000);
-    return () => { stop?.(); stopWorker?.(); clearInterval(t); };
+    return () => { stop?.(); clearInterval(t); };
   }, []);
 
   return (
@@ -107,15 +104,12 @@ export function AppShell() {
             className="lg:hidden rounded-md p-2 hover:bg-secondary/50"
             aria-label="Menu"
           >
-            <Rocket className="size-4" />
+            <Menu className="size-4" />
           </button>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span
-              className={`size-1.5 rounded-full ${
-                worker === "online" ? "bg-success" : worker === "offline" ? "bg-destructive" : "bg-muted-foreground"
-              } pulse-dot`}
-            />
-            <span>Worker {worker === "online" ? "ONLINE" : worker === "offline" ? "offline" : "—"}</span>
+            <span className="size-1.5 rounded-full bg-success pulse-dot text-success" />
+            <span>Núcleo IA online</span>
+            <span className="hidden sm:inline">· região: br-sp · v2.4.1</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">
