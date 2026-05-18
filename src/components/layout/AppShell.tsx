@@ -1,31 +1,21 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  FolderKanban,
-  Hammer,
-  Stethoscope,
-  Cable,
-  Mic,
-  Lock,
+  Rocket,
+  ListChecks,
   Settings,
   Activity,
   Sparkles,
-  Brain,
   RefreshCw,
+  Menu,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 
 const NAV = [
-  { to: "/", label: "Command Center", icon: LayoutDashboard },
-  { to: "/projects", label: "Projetos", icon: FolderKanban },
-  { to: "/forge", label: "Forge", icon: Hammer },
-  { to: "/doctor", label: "Doctor", icon: Stethoscope },
-  { to: "/connect", label: "Connect", icon: Cable },
-  { to: "/voice", label: "Voice Command", icon: Mic },
-  { to: "/admin", label: "Núcleo Factory", icon: Brain },
-  { to: "/private", label: "Private Mode", icon: Lock },
+  { to: "/", label: "Missão", icon: Rocket },
+  { to: "/queue", label: "Fila", icon: ListChecks },
+  { to: "/logs", label: "Logs", icon: Activity },
   { to: "/settings", label: "Configurações", icon: Settings },
 ] as const;
 
@@ -114,7 +104,7 @@ export function AppShell() {
             className="lg:hidden rounded-md p-2 hover:bg-secondary/50"
             aria-label="Menu"
           >
-            <LayoutDashboard className="size-4" />
+            <Menu className="size-4" />
           </button>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <span className="size-1.5 rounded-full bg-success pulse-dot text-success" />
