@@ -26,6 +26,7 @@ export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [paletteOpen, setPaletteOpen] = useState(false);
   useFactoryData();
   useEffect(() => {
     void factoryData.hydrate();
