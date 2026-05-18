@@ -1,4 +1,5 @@
 import "./ai-factory-mobile-fix.css";
+import "./lib/factory-settings";
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
