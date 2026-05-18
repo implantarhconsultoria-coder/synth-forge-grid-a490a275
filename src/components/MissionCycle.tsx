@@ -1,10 +1,9 @@
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import {
   Rocket, Play, RefreshCw, Loader2, CheckCircle2, AlertTriangle,
   Clock, ShieldCheck, Sparkles, ListChecks,
 } from "lucide-react";
-import { analyzeMission, type Diagnosis } from "@/lib/factory-analyze.functions";
+import { analyzeMissionLocal, type Diagnosis } from "@/lib/factory-analyze";
 import { factoryData } from "@/lib/factory-data";
 import { notify } from "@/lib/notifications";
 
