@@ -75,6 +75,19 @@ const inputCls =
 function SettingsPage() {
   const s = useFactorySettings();
   const [testingWorker, setTestingWorker] = useState(false);
+  const [workerStatus, setWorkerStatus] = useState<null | { state: "online" | "offline" | "timeout"; at: number; endpoint?: string }>(
+    () => {
+      try {
+        const raw = localStorage.getItem("factory.workerStatus");
+        return raw ? JSON.parse(raw) : null;
+      } catch { return null; }
+    }
+  );
+
+  function persistStatus(st: NonNullable<typeof workerStatus>) {
+    setWorkerStatus(st);
+    try { localStorage.setItem("factory.workerStatus", JSON.stringify(st)); } catch {}
+  }
 
   async function testWorker() {
     const base = s.workerUrl?.trim();
@@ -83,24 +96,54 @@ function SettingsPage() {
       return;
     }
     setTestingWorker(true);
-    const url = base.replace(/\/+$/, "") + (base.match(/:\d+/) ? "" : `:${s.workerPort}`);
+    const normalized = base.replace(/\/+$/, "");
+    const hasPort = /:\d+(\/|$)/.test(normalized.replace(/^https?:\/\//, ""));
+    const url = hasPort ? normalized : `${normalized}:${s.workerPort}`;
     const endpoints = ["/status", "/health", "/saude"];
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000);
+    let timedOut = false;
+    const timeoutFlag = setTimeout(() => { timedOut = true; }, 8000);
+
     try {
       for (const ep of endpoints) {
         try {
-          const r = await fetch(url + ep, { method: "GET" });
+          const r = await fetch(url + ep, { method: "GET", signal: controller.signal });
           if (r.ok) {
-            toast.success(`Worker ONLINE (${ep})`);
-            setTestingWorker(false);
+            persistStatus({ state: "online", at: Date.now(), endpoint: ep });
+            toast.success(`Núcleo conectado (${ep})`);
             return;
           }
-        } catch {}
+        } catch (err: any) {
+          if (err?.name === "AbortError") break;
+        }
       }
-      toast.error("Worker não respondeu em /status, /health ou /saude");
+      if (timedOut) {
+        persistStatus({ state: "timeout", at: Date.now() });
+        toast.warning("Timeout — Worker não respondeu em 8s");
+      } else {
+        persistStatus({ state: "offline", at: Date.now() });
+        toast.error("Worker offline");
+      }
     } finally {
+      clearTimeout(timeoutId);
+      clearTimeout(timeoutFlag);
       setTestingWorker(false);
     }
   }
+
+  const statusColor =
+    workerStatus?.state === "online" ? "bg-success/15 text-success border-success/40"
+    : workerStatus?.state === "timeout" ? "bg-warning/15 text-warning border-warning/40"
+    : workerStatus?.state === "offline" ? "bg-destructive/15 text-destructive border-destructive/40"
+    : "bg-muted/20 text-muted-foreground border-border";
+  const statusLabel =
+    testingWorker ? "TESTANDO…"
+    : workerStatus?.state === "online" ? `ONLINE${workerStatus.endpoint ? ` · ${workerStatus.endpoint}` : ""}`
+    : workerStatus?.state === "timeout" ? "TIMEOUT"
+    : workerStatus?.state === "offline" ? "OFFLINE"
+    : "Sem teste recente";
 
   return (
     <div className="space-y-6 max-w-3xl pb-12">
@@ -242,6 +285,15 @@ function SettingsPage() {
               className={inputCls}
             />
           </Field>
+        </div>
+
+        <div className={`flex items-center justify-between rounded-lg border px-3 py-2 text-xs ${statusColor}`}>
+          <span className="font-semibold tracking-wider">{statusLabel}</span>
+          {workerStatus && !testingWorker && (
+            <span className="opacity-70">
+              {new Date(workerStatus.at).toLocaleTimeString("pt-BR")}
+            </span>
+          )}
         </div>
 
         <button

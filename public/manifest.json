@@ -1,21 +1,16 @@
 {
-  "name": "AI Factory",
-  "short_name": "Factory",
+  "name": "AI FACTORY — Inteligência Operacional",
+  "short_name": "AI Factory",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#020611",
-  "theme_color": "#8b5cf6",
-  "description": "Central operacional inteligente da ImplantaRH",
+  "orientation": "portrait",
+  "background_color": "#050B18",
+  "theme_color": "#070b17",
+  "description": "Centro operacional autônomo universal da ImplantaRH.",
   "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+    { "src": "/ai-factory-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }

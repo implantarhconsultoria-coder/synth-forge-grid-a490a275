@@ -44,20 +44,30 @@ export async function notify({ kind, title, body, force }: NotifyOptions): Promi
   if (!s.notificationsEnabled) return false;
   if (!force && !s.notificationTypes[kind]) return false;
 
-  // Sound
   if (s.soundEnabled) playBeep();
-
-  // Vibration
   if (s.vibrationEnabled && "vibrate" in navigator) {
-    try { navigator.vibrate?.(80); } catch {}
+    try { navigator.vibrate?.([80, 40, 80]); } catch {}
   }
 
-  // System notification
   if ("Notification" in window) {
     const perm = Notification.permission === "granted"
       ? "granted"
       : await ensureNotificationPermission();
     if (perm === "granted") {
+      // Prefer SW notifications — they work when tab is in background / screen locked
+      try {
+        const reg = await navigator.serviceWorker?.getRegistration();
+        if (reg) {
+          await reg.showNotification(title, {
+            body,
+            icon: "/ai-factory-icon.svg",
+            badge: "/ai-factory-icon.svg",
+            tag: kind,
+            renotify: true,
+          } as NotificationOptions);
+          return true;
+        }
+      } catch {}
       try {
         new Notification(title, { body, icon: "/ai-factory-icon.svg" });
         return true;

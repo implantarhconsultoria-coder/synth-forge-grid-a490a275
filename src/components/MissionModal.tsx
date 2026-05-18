@@ -182,17 +182,27 @@ export function MissionModal({ open, onOpenChange }: { open: boolean; onOpenChan
 
           {/* Attachments */}
           {files.length > 0 && (
-            <ul className="space-y-1.5">
+            <ul className="space-y-1.5 max-h-64 overflow-y-auto">
               {files.map((f) => {
                 const Icon = kindIcon[f.kind];
+                const isMedia = f.kind === "image" || f.kind === "video";
+                const url = isMedia ? URL.createObjectURL(f.file) : "";
                 return (
-                  <li key={f.id} className="flex items-center gap-2 rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs">
-                    <Icon className="size-4 text-primary shrink-0" />
-                    <span className="truncate flex-1">{f.file.name}</span>
-                    <span className="text-muted-foreground">{(f.file.size / 1024).toFixed(0)} KB</span>
-                    <button onClick={() => removeFile(f.id)} className="text-muted-foreground hover:text-destructive">
-                      <X className="size-3.5" />
-                    </button>
+                  <li key={f.id} className="rounded-lg border border-border/50 bg-background/40 px-3 py-2 text-xs space-y-2">
+                    <div className="flex items-center gap-2">
+                      <Icon className="size-4 text-primary shrink-0" />
+                      <span className="truncate flex-1">{f.file.name}</span>
+                      <span className="text-muted-foreground">{(f.file.size / 1024).toFixed(0)} KB</span>
+                      <button onClick={() => removeFile(f.id)} className="text-muted-foreground hover:text-destructive">
+                        <X className="size-3.5" />
+                      </button>
+                    </div>
+                    {f.kind === "image" && (
+                      <img src={url} alt={f.file.name} className="max-h-40 rounded-md object-cover w-full" />
+                    )}
+                    {f.kind === "video" && (
+                      <video src={url} controls playsInline className="max-h-48 rounded-md w-full bg-black" />
+                    )}
                   </li>
                 );
               })}
