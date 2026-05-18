@@ -185,10 +185,10 @@ function CommandCenter() {
             ))}
           </div>
           <Link
-            to="/admin"
+            to="/logs"
             className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl glass border border-primary/30 px-3 text-sm font-bold"
           >
-            Inspecionar núcleo <ArrowUpRight className="size-4" />
+            Ver logs <ArrowUpRight className="size-4" />
           </Link>
         </div>
       </section>
