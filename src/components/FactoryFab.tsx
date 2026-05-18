@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { useServerFn } from "@tanstack/react-start";
 import { Sparkles, X, Send, AlertTriangle, CheckCircle2, AlertCircle, Loader2, ShieldAlert, Rocket } from "lucide-react";
-import { analyzeMission, type Diagnosis } from "@/lib/factory-analyze.functions";
+import { analyzeMissionLocal, type Diagnosis } from "@/lib/factory-analyze";
 import { factoryData } from "@/lib/factory-data";
 import { notify } from "@/lib/notifications";
 
@@ -40,7 +39,7 @@ export function FactoryFab() {
   const [diag, setDiag] = useState<Diagnosis | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  const analyze = useServerFn(analyzeMission);
+  const analyze = (p: string) => Promise.resolve(analyzeMissionLocal(p));
 
   const reset = () => {
     setPhase("closed");
@@ -56,7 +55,7 @@ export function FactoryFab() {
     setError(null);
     factoryData.addLog({ type: "system", level: "info", message: `Pergunta enviada à AI Factory: "${prompt.slice(0, 80)}"` });
     try {
-      const result = await analyze({ data: { prompt } });
+      const result = await analyze(prompt);
       setDiag(result);
       setPhase("result");
       const lvl = result.status === "wrong" ? "error" : result.status === "ready" ? "ok" : "warn";
