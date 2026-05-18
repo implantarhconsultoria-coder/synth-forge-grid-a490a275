@@ -78,16 +78,14 @@ function CommandCenter() {
           </div>
 
           <div className="flex flex-col items-center text-center space-y-4">
-            <div className="relative">
-              <div className="absolute inset-0 blur-3xl bg-gradient-to-br from-primary/30 to-accent/30 rounded-full" />
-              <img
-                src={aiFactoryIcon}
-                alt="AI Factory"
-                width={768}
-                height={768}
-                className="relative w-40 sm:w-52 lg:w-56 aspect-square object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.55)]"
-              />
-            </div>
+            <img
+              src={aiFactoryIcon}
+              alt="AI Factory"
+              width={768}
+              height={768}
+              className="w-40 sm:w-52 lg:w-56 aspect-square object-contain bg-transparent"
+              style={{ background: "transparent" }}
+            />
 
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[0.25em] bg-gradient-to-r from-[#22d3ee] via-[#a78bfa] to-[#f472b6] bg-clip-text text-transparent">
               AI&nbsp;FACTORY
