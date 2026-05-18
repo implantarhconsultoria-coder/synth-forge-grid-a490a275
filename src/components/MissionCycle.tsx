@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import {
   Rocket, Play, RefreshCw, Loader2, CheckCircle2, AlertTriangle,
   Clock, ShieldCheck, Sparkles, ListChecks,
 } from "lucide-react";
-import { analyzeMissionLocal, type Diagnosis } from "@/lib/factory-analyze";
+import { aiAnalyze, getMissionStatus } from "@/lib/factory-analyze.functions";
 import { factoryData } from "@/lib/factory-data";
 import { notify } from "@/lib/notifications";
 import { buildScopedMission } from "@/config/factoryModules";
@@ -14,6 +15,12 @@ interface Step {
   text: string;
   status: StepStatus;
   note?: string;
+}
+interface Diagnosis {
+  headline: string;
+  toValidate: string[];
+  risks: string[];
+  realCommand: string;
 }
 
 type Phase = "idle" | "analyzing" | "ready" | "executing" | "done";
@@ -34,12 +41,14 @@ function classify(text: string, diag: Diagnosis): StepStatus {
 }
 
 export function MissionCycle() {
-  const analyze = (p: string) => Promise.resolve(analyzeMissionLocal(p));
+  const analyzeFn = useServerFn(aiAnalyze);
+  const statusFn = useServerFn(getMissionStatus);
   const [prompt, setPrompt] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [diag, setDiag] = useState<Diagnosis | null>(null);
   const [steps, setSteps] = useState<Step[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [missionId, setMissionId] = useState<string | null>(null);
 
   const counts = steps.reduce(
     (acc, s) => ({ ...acc, [s.status]: acc[s.status] + 1 }),
@@ -50,72 +59,127 @@ export function MissionCycle() {
     if (!prompt.trim()) return;
     setPhase("analyzing");
     setError(null);
-    factoryData.addLog({ type: "system", level: "info", message: `Ciclo de missão iniciado: "${prompt.slice(0, 80)}"` });
+    factoryData.addLog({ type: "system", level: "info", message: `Análise IA REAL iniciada: "${prompt.slice(0, 80)}"` });
     try {
-      const result = await analyze(prompt);
-      setDiag(result);
-      const toCheck = result.toValidate?.length ? result.toValidate : [result.headline];
+      const result = await analyzeFn({ data: { prompt } });
+      const d: Diagnosis = {
+        headline: result.headline,
+        toValidate: result.toValidate,
+        risks: result.risks,
+        realCommand: result.realCommand,
+      };
+      setDiag(d);
+      const toCheck = d.toValidate?.length ? d.toValidate : [d.headline];
       setSteps(toCheck.map((t: string, i: number) => ({ id: `s${i}`, text: t, status: "pendente" })));
       setPhase("ready");
+      factoryData.addLog({ type: "system", level: "ok", message: `IA real respondeu: ${d.headline}` });
     } catch (e: any) {
-      setError(e?.message || "Falha na análise");
+      const msg = e?.message || "Falha na análise IA";
+      setError(msg);
+      factoryData.addLog({ type: "system", level: "error", message: `Analisar: ${msg}` });
       setPhase("idle");
     }
   }
 
   async function createReal() {
     if (!diag) return;
-    // INTERCEPTADOR: aplica escopo rígido do módulo antes de despachar
     const scoped = buildScopedMission(prompt);
     const objective = `${diag.realCommand || `AUDITORIA REAL — ${diag.headline}`}\n\n${scoped.finalPrompt}`;
     try {
-      await factoryData.createExecutionMission({
+      const m = await factoryData.createExecutionMission({
         title: `[${scoped.module.name}] ${diag.headline}`,
         objective,
         project: scoped.project,
       });
+      setMissionId(m.id);
       notify({ kind: "mission_created", title: "Missão real criada", body: `${scoped.module.name} · ${diag.headline}` });
-      factoryData.addLog({
-        type: "system",
-        level: "ok",
-        module: scoped.module.name,
-        projectName: scoped.project,
-        message: `Missão real enviada à fila: ${diag.headline}`,
-        metadataDetails: {
-          prompt: scoped.finalPrompt,
-          response: `Arquivos: ${scoped.targetFiles.join(", ") || "—"}\nTabelas: ${scoped.databaseTables.join(", ") || "—"}`,
-        },
-      });
     } catch (e: any) {
-      setError(e?.message || "Falha ao criar missão");
+      const msg = e?.message || "Falha ao criar missão";
+      setError(msg);
+      factoryData.addLog({ type: "system", level: "error", message: `Criar missão: ${msg}` });
     }
   }
 
   async function execute() {
-    if (!diag || !steps.length) return;
+    if (!diag) return;
     setPhase("executing");
-    for (let i = 0; i < steps.length; i++) {
-      await new Promise((r) => setTimeout(r, 450));
-      setSteps((prev) => {
-        const next = [...prev];
-        next[i] = { ...next[i], status: classify(next[i].text, diag) };
-        return next;
-      });
+    setError(null);
+    try {
+      // Garante que a missão real foi criada
+      let id = missionId;
+      if (!id) {
+        const scoped = buildScopedMission(prompt);
+        const objective = `${diag.realCommand}\n\n${scoped.finalPrompt}`;
+        const m = await factoryData.createExecutionMission({
+          title: `[${scoped.module.name}] ${diag.headline}`,
+          objective,
+          project: scoped.project,
+        });
+        id = m.id;
+        setMissionId(id);
+      }
+
+      // Dispara worker REAL (IA + commit GitHub)
+      const tickRes = await fetch("/api/public/factory/tick", { method: "POST" });
+      if (!tickRes.ok) throw new Error(`Worker HTTP ${tickRes.status}`);
+      const tickJson = await tickRes.json();
+      if (!tickJson.hasGithub) {
+        factoryData.addLog({ type: "system", level: "warn", message: "GITHUB_TOKEN ausente — commit real desabilitado" });
+      }
+
+      // Poll status até concluir
+      let row: any = null;
+      for (let i = 0; i < 30; i++) {
+        await new Promise((r) => setTimeout(r, 1500));
+        row = await statusFn({ data: { id: id! } });
+        if (row?.status === "done" || row?.status === "failed") break;
+      }
+
+      // Atualiza steps com base no resultado real
+      setSteps((prev) =>
+        prev.map((s) => ({
+          ...s,
+          status: row?.status === "failed" ? "falha" : classify(s.text, diag),
+        })),
+      );
+
+      if (row?.status === "failed") {
+        setError(row?.error || "Execução falhou");
+        factoryData.addLog({ type: "system", level: "error", message: `Execução falhou: ${row?.error}` });
+      } else if (row?.status === "done") {
+        const commitUrl = row?.result?.commit?.url;
+        factoryData.addLog({
+          type: "system",
+          level: "ok",
+          message: commitUrl ? `Commit real: ${commitUrl}` : "Plano IA gerado (sem commit)",
+        });
+      }
+      setPhase("done");
+    } catch (e: any) {
+      const msg = e?.message || "Falha na execução real";
+      setError(msg);
+      factoryData.addLog({ type: "system", level: "error", message: `Executar: ${msg}` });
+      setPhase("ready");
     }
-    factoryData.addLog({ type: "system", level: "ok", message: `Execução simulada concluída: ${diag.headline}` });
-    setPhase("done");
   }
 
   async function revalidate() {
-    setSteps((prev) => prev.map((s) => ({ ...s, status: "pendente" })));
+    if (!missionId) {
+      setError("Sem missão para revalidar");
+      return;
+    }
     setPhase("analyzing");
+    setError(null);
     try {
-      const result = await analyze(prompt);
-      setDiag(result);
-      const toCheck = result.toValidate?.length ? result.toValidate : [result.headline];
-      setSteps(toCheck.map((t: string, i: number) => ({ id: `s${i}`, text: t, status: "pendente" })));
-      setPhase("ready");
-      factoryData.addLog({ type: "system", level: "info", message: `Revalidação executada: ${result.headline}` });
+      const row = await statusFn({ data: { id: missionId } });
+      setSteps((prev) =>
+        prev.map((s) => ({
+          ...s,
+          status: row?.status === "failed" ? "falha" : row?.status === "done" ? "corrigido" : "pendente",
+        })),
+      );
+      factoryData.addLog({ type: "system", level: "info", message: `Revalidação real: status=${row?.status}` });
+      setPhase(row?.status === "done" || row?.status === "failed" ? "done" : "ready");
     } catch (e: any) {
       setError(e?.message || "Falha ao revalidar");
       setPhase("ready");
@@ -127,6 +191,7 @@ export function MissionCycle() {
     setDiag(null);
     setSteps([]);
     setError(null);
+    setMissionId(null);
     setPhase("idle");
   }
 
@@ -145,7 +210,6 @@ export function MissionCycle() {
       </header>
 
       <div className="p-5 space-y-4">
-        {/* prompt */}
         <div className="space-y-2">
           <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pedido</label>
           <textarea
@@ -158,7 +222,6 @@ export function MissionCycle() {
           />
         </div>
 
-        {/* actions */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <button
             onClick={runAnalysis}
@@ -177,7 +240,7 @@ export function MissionCycle() {
           </button>
           <button
             onClick={execute}
-            disabled={!steps.length || phase === "executing" || phase === "analyzing"}
+            disabled={!diag || phase === "executing" || phase === "analyzing"}
             className="inline-flex items-center justify-center gap-2 rounded-xl border border-success/40 text-success py-2.5 text-xs font-bold disabled:opacity-40 hover:bg-success/10 transition"
           >
             {phase === "executing" ? <Loader2 className="size-3.5 animate-spin" /> : <Play className="size-3.5" />}
@@ -187,7 +250,6 @@ export function MissionCycle() {
 
         {error && <div className="text-xs text-destructive">{error}</div>}
 
-        {/* counters */}
         {steps.length > 0 && (
           <div className="grid grid-cols-4 gap-2">
             {(Object.keys(stepMeta) as StepStatus[]).map((k) => {
@@ -204,7 +266,6 @@ export function MissionCycle() {
           </div>
         )}
 
-        {/* steps list */}
         {steps.length > 0 && (
           <ul className="space-y-1.5">
             {steps.map((s) => {
@@ -224,8 +285,7 @@ export function MissionCycle() {
           </ul>
         )}
 
-        {/* revalidar */}
-        {phase === "done" && (
+        {(phase === "done" || phase === "ready") && missionId && (
           <button
             onClick={revalidate}
             className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border/60 py-2.5 text-xs font-bold hover:bg-secondary/50 transition"
