@@ -146,6 +146,7 @@ export function AppShell() {
         </footer>
       </div>
       <MobileBottomNav />
+      <FactoryFab />
     </div>
   );
 }
