@@ -72,39 +72,48 @@ function CommandCenter() {
         <div className="absolute -bottom-24 -left-10 size-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute inset-0 grid-bg opacity-30" />
 
-        <div className="relative flex flex-col items-center text-center space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-success">
+        <div className="relative flex flex-col space-y-6">
+          <div className="self-start inline-flex items-center gap-2 rounded-full border border-success/40 bg-success/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-success">
             <Radio className="size-3 animate-pulse" /> Núcleo IA online
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 blur-3xl bg-gradient-to-br from-primary/30 to-accent/30 rounded-full" />
-            <img
-              src={aiFactoryLogo}
-              alt="AI Factory · Inteligência Operacional · ImplantaRH"
-              width={1024}
-              height={1024}
-              className="relative w-56 sm:w-72 lg:w-80 aspect-square object-contain rounded-3xl drop-shadow-[0_0_60px_rgba(139,92,246,0.45)]"
-            />
-          </div>
+          <div className="flex flex-col items-center text-center space-y-4">
+            <div className="relative">
+              <div className="absolute inset-0 blur-3xl bg-gradient-to-br from-primary/30 to-accent/30 rounded-full" />
+              <img
+                src={aiFactoryIcon}
+                alt="AI Factory"
+                width={768}
+                height={768}
+                className="relative w-40 sm:w-52 lg:w-56 aspect-square object-contain drop-shadow-[0_0_60px_rgba(139,92,246,0.55)]"
+              />
+            </div>
 
-          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-            Centro de comando inteligente da ImplantaRH para criar, monitorar, corrigir e automatizar projetos digitais em tempo real.
-          </p>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-[0.25em] bg-gradient-to-r from-[#22d3ee] via-[#a78bfa] to-[#f472b6] bg-clip-text text-transparent">
+              AI&nbsp;FACTORY
+            </h1>
+            <p className="text-xs sm:text-sm tracking-[0.4em] text-muted-foreground/80 font-medium">
+              I M P L A N T A R H&nbsp;&nbsp;P R O
+            </p>
 
-          <div className="grid gap-3 sm:flex sm:flex-wrap sm:justify-center pt-2">
-            <button
-              onClick={() => setMissionOpen(true)}
-              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-accent px-8 text-base font-bold text-primary-foreground glow-border shadow-[0_10px_40px_rgba(139,92,246,0.4)] active:scale-[0.98] sm:w-auto"
-            >
-              <Rocket className="size-5" /> Iniciar missão
-            </button>
-            <Link
-              to="/queue"
-              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl glass border border-primary/30 px-8 text-base font-bold sm:w-auto"
-            >
-              <ListChecks className="size-5 text-primary" /> Ver fila
-            </Link>
+            <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base pt-2">
+              Centro de comando inteligente da ImplantaRH para criar, monitorar, corrigir e automatizar projetos digitais em tempo real.
+            </p>
+
+            <div className="grid gap-3 sm:flex sm:flex-wrap sm:justify-center pt-2">
+              <button
+                onClick={() => setMissionOpen(true)}
+                className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-accent px-8 text-base font-bold text-primary-foreground glow-border shadow-[0_10px_40px_rgba(139,92,246,0.4)] active:scale-[0.98] sm:w-auto"
+              >
+                <Rocket className="size-5" /> Iniciar missão
+              </button>
+              <Link
+                to="/queue"
+                className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl glass border border-primary/30 px-8 text-base font-bold sm:w-auto"
+              >
+                <ListChecks className="size-5 text-primary" /> Ver fila
+              </Link>
+            </div>
           </div>
         </div>
       </section>
