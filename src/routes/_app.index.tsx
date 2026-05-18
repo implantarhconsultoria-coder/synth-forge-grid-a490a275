@@ -4,7 +4,7 @@ import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { MissionModal } from "@/components/MissionModal";
 import {
-  Activity, Cpu, Radio, Rocket, Bot, FolderKanban, Wrench, MonitorSmartphone, ArrowUpRight,
+  Activity, Cpu, Radio, Rocket, ListChecks, ArrowUpRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
@@ -63,10 +63,8 @@ function CommandCenter() {
     label: string; sub: string; icon: any; to?: string; onClick?: () => void; primary?: boolean;
   }> = [
     { label: "Iniciar missão", sub: "Enviar ao núcleo IA", icon: Rocket, onClick: () => setMissionOpen(true), primary: true },
-    { label: "Núcleo IA", sub: "Worker · realtime", icon: Bot, to: "/admin" },
-    { label: "Projetos", sub: "Ecossistema", icon: FolderKanban, to: "/projects" },
-    { label: "Correções", sub: "Patches IA", icon: Wrench, to: "/doctor" },
-    { label: "Monitoramento", sub: "Logs ao vivo", icon: MonitorSmartphone, to: "/connect" },
+    { label: "Fila", sub: "Missões e comandos", icon: ListChecks, to: "/queue" },
+    { label: "Logs", sub: "Eventos em tempo real", icon: Activity, to: "/logs" },
   ];
 
   return (
