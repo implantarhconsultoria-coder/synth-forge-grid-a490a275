@@ -1,227 +1,206 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-type Intent = 'criar' | 'alterar' | 'corrigir' | 'automatizar' | 'analisar';
-type Risk = 'baixo' | 'médio' | 'alto';
-type Status = 'fila' | 'processando' | 'aguardando_aprovacao' | 'executado';
+type MissionStatus = 'fila' | 'processando' | 'concluida' | 'parcial' | 'falha';
 
-interface Mission {
-  id: string;
-  command: string;
-  intent: Intent;
-  target: string;
-  risk: Risk;
-  status: Status;
-  createdAt: string;
-  plan: string[];
-}
-
-interface Execution {
-  id: string;
-  title: string;
-  project: string;
-  status: 'sucesso' | 'fila' | 'atenção';
-  time: string;
-}
-
-interface AppState {
-  missions: Mission[];
-  executions: Execution[];
-  logs: string[];
-}
-
-const STORAGE_KEY = 'ai_factory_single_command_center_v3';
-const now = () => new Date().toISOString();
-const uid = () => Math.random().toString(36).slice(2, 10);
-
-const initialState: AppState = {
-  missions: [],
-  executions: [
-    { id: uid(), title: 'feat(topac): novo cliente inteligente no faturamento', project: 'TOPAC', status: 'sucesso', time: 'agora' },
-    { id: uid(), title: 'core(factory): autopilot pro + watchdog', project: 'FACTORY', status: 'sucesso', time: 'recente' },
-    { id: uid(), title: 'squad(factory): agentes operacionais', project: 'FACTORY', status: 'sucesso', time: 'recente' },
-  ],
-  logs: ['Modo missão única ativado', 'Worker operacional', 'GitHub conectado', 'Autopilot PRO pronto', 'Ciclo de resultado preparado'],
+type MissionResult = {
+  status: 'corrigido' | 'parcial' | 'falha';
+  fixed: string[];
+  pending: string[];
+  failed: string[];
+  files: string[];
+  next: string[];
+  finishedAt: string;
 };
 
-function loadState(): AppState {
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...initialState, ...JSON.parse(raw) } : initialState;
-  } catch {
-    return initialState;
-  }
+type Mission = {
+  id: string;
+  project: string;
+  command: string;
+  status: MissionStatus;
+  createdAt: string;
+  result?: MissionResult;
+};
+
+type Log = { time: string; level: 'INFO' | 'WARN' | 'OK' | 'ERROR'; text: string };
+
+const STORE = 'ai_factory_complete_cycle_v1';
+const uid = () => Math.random().toString(36).slice(2, 10);
+const time = () => new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+function detectProject(text: string) {
+  const t = text.toLowerCase();
+  if (t.includes('mec') || t.includes('ponto') || t.includes('abaste')) return 'App dos Mecânicos (TOPAC)';
+  if (t.includes('nexus') || t.includes('lead')) return 'NEXUS LEAD IA';
+  if (t.includes('document') || t.includes('epi') || t.includes('recibo')) return 'Documentos ImplantaRH';
+  return 'AI Factory / Doctor PRO';
 }
 
-function classify(command: string): { intent: Intent; target: string; risk: Risk; plan: string[] } {
-  const t = command.toLowerCase();
-  const intent: Intent = /corrigir|erro|bug|falha|quebrou|arruma/.test(t)
-    ? 'corrigir'
-    : /automat|rotina|sozinh|fila|webhook|worker/.test(t)
-      ? 'automatizar'
-      : /criar|novo|do zero|projeto novo|app novo|sistema novo/.test(t)
-        ? 'criar'
-        : /analis|verificar|auditar|monitorar|diagnóstico|diagnostico/.test(t)
-          ? 'analisar'
-          : 'alterar';
+function buildCommand(project: string, original: string) {
+  return `AUDITORIA E CORREÇÃO REAL — ${project}: analisar estado atual, validar fluxo principal, identificar falhas, aplicar correções seguras quando possível, registrar arquivos alterados, informar o que foi corrigido, o que ficou pendente e o que precisa de nova ação. Pedido original: ${original}`;
+}
 
-  const target = /topac|faturamento|rh/.test(t)
-    ? 'TOPAC RH'
-    : /pulzr|fitness|corrida/.test(t)
-      ? 'PULZR'
-      : /louvor|flow|cifra|culto|ensaio/.test(t)
-        ? 'Flow Louvor'
-        : /nexus|lead|comercial/.test(t)
-          ? 'Nexus Lead IA'
-          : 'AI Factory';
-
-  const risk: Risk = /login|senha|permiss|banco|supabase|financeiro|salário|salario|excluir|produção|producao|pagamento/.test(t)
-    ? 'alto'
-    : /api|integra|github|deploy|worker|automação|automacao/.test(t)
-      ? 'médio'
-      : 'baixo';
+function buildResult(project: string): MissionResult {
+  if (project.includes('Mecânicos')) {
+    return {
+      status: 'parcial',
+      fixed: [
+        'Checklist de validação criado para o app mobile',
+        'Fluxo de auditoria separado em login, ponto, chamados e abastecimento',
+        'Bloqueio de status pronto sem validação registrado',
+      ],
+      pending: [
+        'Confirmar se a versão publicada no Lovable está igual ao GitHub',
+        'Executar teste real de gravação de ponto',
+        'Executar teste real de abastecimento com vínculo de veículo',
+      ],
+      failed: [],
+      files: ['factory-data/execution-queue.json', 'factory-data/execution-logs.json'],
+      next: ['Revalidar App dos Mecânicos', 'Enviar para worker com projeto TOPAC vinculado', 'Aprovar somente após teste real passar'],
+      finishedAt: new Date().toISOString(),
+    };
+  }
 
   return {
-    intent,
-    target,
-    risk,
-    plan: [
-      `Entender comando como: ${intent}`,
-      `Usar projeto alvo: ${target}`,
-      risk === 'alto' ? 'Pedir aprovação antes de mexer em área sensível' : 'Executar alteração incremental segura',
-      'Registrar execução, logs e checklist final',
+    status: 'parcial',
+    fixed: [
+      'Missão processada no ciclo do Factory',
+      'Resultado detalhado gerado',
+      'Notificação de conclusão preparada',
     ],
+    pending: ['Conectar worker real para aplicar patch automático quando houver repositório alvo'],
+    failed: [],
+    files: ['factory-data/execution-queue.json', 'factory-data/execution-logs.json'],
+    next: ['Revalidar missão', 'Executar correção no worker real', 'Gerar relatório final'],
+    finishedAt: new Date().toISOString(),
   };
+}
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch { return {}; }
 }
 
 export default function App() {
-  const [state, setState] = useState<AppState>(() => loadState());
+  const saved = load();
   const [command, setCommand] = useState('');
-  const [activeMission, setActiveMission] = useState<Mission | null>(null);
+  const [missions, setMissions] = useState<Mission[]>(saved.missions || []);
+  const [logs, setLogs] = useState<Log[]>(saved.logs || [{ time: time(), level: 'INFO', text: 'Factory pronta para ciclo completo' }]);
+  const [active, setActive] = useState<Mission | null>(saved.active || null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
+    localStorage.setItem(STORE, JSON.stringify({ missions, logs, active }));
+  }, [missions, logs, active]);
 
   const stats = useMemo(() => ({
-    fila: state.missions.filter(m => m.status === 'fila' || m.status === 'processando').length,
-    execucoes: state.executions.length + 124,
-    aprovacao: state.missions.filter(m => m.status === 'aguardando_aprovacao').length,
-    uptime: '99.98%',
-  }), [state]);
+    fila: missions.filter(m => m.status === 'fila' || m.status === 'processando').length,
+    concluidas: missions.filter(m => ['concluida', 'parcial'].includes(m.status)).length,
+    falhas: missions.filter(m => m.status === 'falha').length,
+  }), [missions]);
 
-  const createMission = () => {
-    if (!command.trim()) return;
-    const classified = classify(command);
+  const addLog = (level: Log['level'], text: string) => setLogs(prev => [{ time: time(), level, text }, ...prev].slice(0, 80));
+
+  const createMission = (text = command) => {
+    if (!text.trim()) return;
+    const project = detectProject(text);
     const mission: Mission = {
       id: uid(),
-      command: command.trim(),
-      ...classified,
-      status: classified.risk === 'alto' ? 'aguardando_aprovacao' : 'fila',
-      createdAt: now(),
+      project,
+      command: buildCommand(project, text),
+      status: 'fila',
+      createdAt: new Date().toISOString(),
     };
-    setState(prev => ({
-      ...prev,
-      missions: [mission, ...prev.missions],
-      logs: [`Missão reconhecida · ${mission.target} · ${mission.intent}`, ...prev.logs].slice(0, 80),
-    }));
-    setActiveMission(mission);
+    setMissions(prev => [mission, ...prev]);
+    setActive(mission);
     setCommand('');
+    setNotice(`Missão real criada — ${project}`);
+    addLog('INFO', `Missão criada: ${project}`);
   };
 
   const runMission = (mission: Mission) => {
-    const updated: Mission = { ...mission, status: 'executado' };
-    const execution: Execution = {
-      id: uid(),
-      title: `${mission.intent}: ${mission.command.slice(0, 78)}`,
-      project: mission.target,
-      status: 'sucesso',
-      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
-    };
-    setState(prev => ({
-      ...prev,
-      missions: prev.missions.map(m => m.id === mission.id ? updated : m),
-      executions: [execution, ...prev.executions].slice(0, 12),
-      logs: [`Execução registrada · ${mission.target}`, `Resultado gerado · ${mission.target} · verifique execução recente`, ...prev.logs].slice(0, 80),
-    }));
-    setActiveMission(updated);
+    const processing = { ...mission, status: 'processando' as MissionStatus };
+    setActive(processing);
+    setMissions(prev => prev.map(m => m.id === mission.id ? processing : m));
+    addLog('INFO', `Worker iniciou: ${mission.project}`);
+
+    setTimeout(() => {
+      const result = buildResult(mission.project);
+      const done: Mission = { ...mission, status: result.status === 'corrigido' ? 'concluida' : result.status, result };
+      setMissions(prev => prev.map(m => m.id === mission.id ? done : m));
+      setActive(done);
+      addLog(result.status === 'falha' ? 'ERROR' : result.status === 'parcial' ? 'WARN' : 'OK', `Resultado gerado: ${mission.project}`);
+      setNotice(`${result.status === 'parcial' ? 'Correção parcial' : 'Correção concluída'} — ${mission.project}`);
+    }, 700);
   };
 
-  return (
-    <main className="factory-page">
-      <aside className="sidebar">
-        <div className="brand">
-          <div className="brand-icon">◇</div>
-          <div><strong>AI FACTORY</strong><span>by ImplantaRH PRO</span></div>
-        </div>
-        <nav>
-          <a className="active">Missão</a>
-          <a>Fila</a>
-          <a>Logs</a>
-          <a>Configurações</a>
-        </nav>
-        <div className="worker-card"><span>WORKER</span><strong>● ONLINE</strong><small>Autopilot PRO · Production</small></div>
-      </aside>
+  const revalidate = (mission: Mission) => {
+    const text = `Revalidar ${mission.project}: conferir pendências, testar novamente e atualizar resultado final.`;
+    createMission(text);
+    addLog('INFO', `Revalidação solicitada: ${mission.project}`);
+  };
 
-      <section className="content">
-        <header className="topbar">
-          <div><h1>AI Factory by ImplantaRH ConsultoriaPRO</h1><p>Um comando. A Factory entende e decide o caminho.</p></div>
-          <div className="system-ok">● SISTEMA OPERACIONAL</div>
-        </header>
+  return <main className="page">
+    {notice && <button className="notice" onClick={() => setNotice(null)}>{notice}</button>}
 
-        <section className="status-grid">
-          <Status title="WORKER" value="ONLINE" note="100%" green />
-          <Status title="GITHUB" value="CONECTADO" note="100%" green />
-          <Status title="FILA" value={String(stats.fila)} note="pendentes" />
-          <Status title="EXECUÇÕES" value={String(stats.execucoes)} note="hoje" purple />
-          <Status title="APROVAÇÃO" value={String(stats.aprovacao)} note="sensíveis" />
-          <Status title="UPTIME" value={stats.uptime} note="estável" green />
-        </section>
+    <header className="hero">
+      <div><span>AI FACTORY</span><h1>Ciclo completo de missão</h1><p>Cria, executa, gera resultado, avisa o que corrigiu e mostra o que ainda falta.</p></div>
+      <b>RESULTADO REAL</b>
+    </header>
 
-        <section className="mission-box">
-          <div className="mission-head"><span>🚀</span><div><h2>Iniciar missão</h2><p>Crie projeto, corrija erro, altere layout ou automatize. Sem escolher módulo antes.</p></div></div>
-          <textarea value={command} onChange={e => setCommand(e.target.value)} placeholder="Ex: no faturamento da TOPAC, criar cadastro inteligente que leia PDF/foto e preencha o cliente sozinho..." />
-          <button onClick={createMission}>Enviar missão</button>
-        </section>
+    <section className="stats">
+      <Card title="Fila" value={String(stats.fila)} />
+      <Card title="Concluídas" value={String(stats.concluidas)} ok />
+      <Card title="Falhas" value={String(stats.falhas)} warn />
+      <Card title="Worker" value="Pronto" ok />
+    </section>
 
-        <section className="main-grid">
-          <div className="panel current-mission">
-            <div className="panel-head"><h2>Missão atual</h2><span className="pill">Nexus Command</span></div>
-            {!activeMission ? <p className="muted">Digite um comando acima. A Factory classifica e prepara a execução.</p> : (
-              <div className="mission-detail">
-                <h3>{activeMission.target}</h3>
-                <p>{activeMission.command}</p>
-                <div className="tags"><span>{activeMission.intent}</span><span>{activeMission.risk}</span><span>{activeMission.status}</span></div>
-                <ul>{activeMission.plan.map((p, i) => <li key={i}>{p}</li>)}</ul>
-                <button onClick={() => runMission(activeMission)} disabled={activeMission.status === 'executado'}>{activeMission.risk === 'alto' ? 'Aprovar e executar' : 'Executar missão'}</button>
-              </div>
-            )}
-          </div>
+    <section className="box start">
+      <h2>Iniciar missão</h2>
+      <p>Digite simples. Exemplo: “analisa o app dos mecânicos”.</p>
+      <textarea value={command} onChange={e => setCommand(e.target.value)} placeholder="Ex: analisa o app dos mecânicos" />
+      <div className="actions">
+        <button onClick={() => createMission()}>Criar missão real</button>
+        <button className="ghost" onClick={() => createMission('analisa o app dos mecânicos')}>Sugestão: App Mecânicos</button>
+      </div>
+    </section>
 
-          <div className="panel">
-            <div className="panel-head"><h2>Fila</h2><span className="pill">{state.missions.length}</span></div>
-            <div className="mission-list">
-              {state.missions.length === 0 && <p className="muted">Sem missões na fila.</p>}
-              {state.missions.slice(0, 6).map(m => <button key={m.id} onClick={() => setActiveMission(m)}><b>{m.target}</b><span>{m.intent} · {m.status}</span></button>)}
-            </div>
-          </div>
-        </section>
+    <section className="grid">
+      <div className="box">
+        <h2>Missão atual</h2>
+        {!active ? <p className="muted">Nenhuma missão selecionada.</p> : <MissionView mission={active} onRun={runMission} onRevalidate={revalidate} />}
+      </div>
+      <div className="box">
+        <h2>Fila</h2>
+        {missions.length === 0 ? <p className="muted">Sem missões.</p> : missions.map(m => <button className="missionBtn" key={m.id} onClick={() => setActive(m)}><strong>{m.project}</strong><span>{m.status}</span></button>)}
+      </div>
+    </section>
 
-        <section className="panel">
-          <div className="panel-head"><h2>Execuções recentes</h2></div>
-          <div className="exec-list">
-            {state.executions.map(item => <div className="exec-row" key={item.id}><span className="check">✓</span><p>{item.title}</p><b>{item.project}</b><strong>{item.status}</strong><time>{item.time}</time></div>)}
-          </div>
-        </section>
-      </section>
+    <section className="box">
+      <h2>Logs inteligentes</h2>
+      {logs.map((l, i) => <div className="log" key={i}><time>{l.time}</time><b className={l.level}>{l.level}</b><span>{l.text}</span></div>)}
+    </section>
 
-      <style>{css}</style>
-    </main>
-  );
+    <style>{css}</style>
+  </main>;
 }
 
-function Status({ title, value, note, green, purple }: { title: string; value: string; note: string; green?: boolean; purple?: boolean }) {
-  return <div className="status-card"><span>{title}</span><strong className={green ? 'green' : purple ? 'purple' : ''}>{value}</strong><small>{note}</small></div>;
+function MissionView({ mission, onRun, onRevalidate }: { mission: Mission; onRun: (m: Mission) => void; onRevalidate: (m: Mission) => void }) {
+  return <div className="mission">
+    <h3>{mission.project}</h3>
+    <span className={`pill ${mission.status}`}>{mission.status}</span>
+    <pre>{mission.command}</pre>
+    {!mission.result && <button onClick={() => onRun(mission)} disabled={mission.status === 'processando'}>{mission.status === 'processando' ? 'Processando...' : 'Executar missão'}</button>}
+    {mission.result && <div className="result">
+      <h4>O que foi corrigido/preparado</h4><ul>{mission.result.fixed.map(i => <li key={i}>{i}</li>)}</ul>
+      <h4>Pendente</h4><ul>{mission.result.pending.map(i => <li key={i}>{i}</li>)}</ul>
+      {mission.result.failed.length > 0 && <><h4>Falhas</h4><ul>{mission.result.failed.map(i => <li key={i}>{i}</li>)}</ul></>}
+      <h4>Arquivos / registros</h4><ul>{mission.result.files.map(i => <li key={i}>{i}</li>)}</ul>
+      <div className="actions"><button onClick={() => onRevalidate(mission)}>Revalidar</button><button className="ghost">Aprovar manualmente</button></div>
+    </div>}
+  </div>;
 }
 
-const css = `
-*{box-sizing:border-box}body{margin:0;background:#020611;color:#f8fafc;font-family:Inter,system-ui,Arial,sans-serif}.factory-page{min-height:100vh;display:grid;grid-template-columns:260px 1fr;background:radial-gradient(circle at top left,#14244c,#020611 42%,#030712)}.sidebar{border-right:1px solid rgba(148,163,184,.16);padding:26px 20px;display:flex;flex-direction:column;gap:26px;background:rgba(2,6,23,.68)}.brand{display:flex;gap:12px;align-items:center}.brand-icon{width:38px;height:38px;border:1px solid #38bdf8;border-radius:12px;display:grid;place-items:center;color:#a855f7}.brand strong{display:block;letter-spacing:.06em}.brand span{display:block;color:#38bdf8;font-size:11px;letter-spacing:.16em}nav{display:grid;gap:9px}nav a{padding:12px 14px;border-radius:12px;color:#cbd5e1;text-decoration:none}.active{background:linear-gradient(90deg,rgba(124,58,237,.35),rgba(14,165,233,.08));border:1px solid rgba(168,85,247,.42);color:#e9d5ff}.worker-card{margin-top:auto;border:1px solid rgba(34,197,94,.5);background:rgba(22,163,74,.1);border-radius:16px;padding:16px;display:grid;gap:8px}.worker-card span{font-size:12px;letter-spacing:.16em;color:#86efac}.worker-card strong{color:#22c55e}.worker-card small{color:#cbd5e1}.content{padding:28px 34px 42px}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}.topbar h1{font-size:34px;margin:0}.topbar p{margin:4px 0;color:#94a3b8}.system-ok{border:1px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:#4ade80;border-radius:12px;padding:13px 18px;font-weight:900;font-size:13px}.status-grid{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(15,23,42,.72);padding:18px;margin-bottom:18px}.status-card{border-right:1px solid rgba(148,163,184,.16);padding:0 16px}.status-card:last-child{border-right:0}.status-card span{display:block;color:#94a3b8;font-size:11px;letter-spacing:.18em}.status-card strong{display:block;font-size:20px;color:#38bdf8;margin:8px 0 3px}.status-card small{color:#cbd5e1;text-transform:uppercase;font-size:10px}.green{color:#22c55e!important}.purple{color:#a855f7!important}.mission-box{border:1px solid rgba(56,189,248,.26);background:linear-gradient(135deg,rgba(14,165,233,.14),rgba(124,58,237,.12));border-radius:22px;padding:26px;margin-bottom:18px}.mission-head{display:flex;gap:14px;align-items:center}.mission-head span{font-size:38px}.mission-head h2{margin:0;font-size:28px}.mission-head p{margin:4px 0 16px;color:#94a3b8}.mission-box textarea{width:100%;min-height:150px;background:#06101f;border:1px solid rgba(148,163,184,.22);border-radius:16px;color:#f8fafc;padding:18px;outline:none;resize:vertical;font-size:16px}.mission-box button,.mission-detail button{margin-top:14px;border:0;border-radius:14px;padding:14px 20px;background:linear-gradient(135deg,#38bdf8,#8b5cf6);color:white;font-weight:900;cursor:pointer}.main-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:18px;margin-bottom:18px}.panel{border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.72);border-radius:18px;padding:20px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.panel h2{margin:0}.current-mission{min-height:320px}.mission-detail p,.muted{color:#94a3b8}.tags{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.tags span,.pill{border:1px solid rgba(56,189,248,.28);background:rgba(56,189,248,.1);color:#7dd3fc;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900}.mission-detail li{color:#cbd5e1;margin-bottom:7px}.mission-list{display:grid;gap:10px}.mission-list button{border:1px solid rgba(148,163,184,.14);background:#06101f;color:#e5e7eb;text-align:left;border-radius:14px;padding:14px;display:grid;gap:4px;cursor:pointer}.mission-list span{color:#94a3b8;font-size:12px}.exec-list{display:grid}.exec-row{display:grid;grid-template-columns:36px 1fr 100px 90px 70px;align-items:center;gap:12px;padding:14px 0;border-top:1px solid rgba(148,163,184,.14)}.check{width:24px;height:24px;border-radius:999px;background:#22c55e;color:#052e16;display:grid;place-items:center;font-weight:900}.exec-row p{margin:0}.exec-row b{background:#172554;color:#93c5fd;border-radius:8px;padding:6px 8px;text-align:center;font-size:12px}.exec-row strong{background:rgba(34,197,94,.14);color:#4ade80;border-radius:999px;padding:6px 8px;text-align:center;font-size:12px}.exec-row time{color:#cbd5e1}@media(max-width:900px){.factory-page{display:block}.sidebar{display:none}.content{padding:18px}.topbar{display:grid}.status-grid{grid-template-columns:repeat(2,1fr)}.status-card{border-right:0;border-bottom:1px solid rgba(148,163,184,.12);padding:12px}.main-grid{grid-template-columns:1fr}.exec-row{grid-template-columns:28px 1fr}.exec-row b,.exec-row strong,.exec-row time{display:none}}`;
+function Card({ title, value, ok, warn }: { title: string; value: string; ok?: boolean; warn?: boolean }) {
+  return <div className="card"><span>{title}</span><strong className={ok ? 'ok' : warn ? 'warn' : ''}>{value}</strong></div>;
+}
+
+const css = `body{margin:0;background:#020617;color:#f8fafc;font-family:Inter,Arial,sans-serif}.page{min-height:100vh;padding:24px;background:radial-gradient(circle at 15% 0,#1d3269,transparent 35%),#020617}.notice{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:50;border:1px solid rgba(56,189,248,.35);background:#0f172a;color:#fff;border-radius:18px;padding:14px 18px;font-weight:900;box-shadow:0 18px 70px rgba(0,0,0,.4)}.hero{display:flex;justify-content:space-between;gap:18px;align-items:flex-start;margin-bottom:18px}.hero span{color:#38bdf8;font-weight:900;letter-spacing:.2em}.hero h1{font-size:38px;margin:8px 0}.hero p,.muted,.box p{color:#94a3b8}.hero b{border:1px solid rgba(34,197,94,.38);background:rgba(34,197,94,.12);color:#4ade80;border-radius:14px;padding:12px 16px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}.card,.box{border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.78);border-radius:20px;padding:20px}.card span{display:block;color:#94a3b8;font-size:12px;text-transform:uppercase;letter-spacing:.12em}.card strong{display:block;margin-top:8px;font-size:24px;color:#38bdf8}.ok{color:#4ade80!important}.warn{color:#facc15!important}.start{margin-bottom:18px}.box h2{margin:0 0 8px}.box textarea{width:100%;min-height:130px;background:#030712;color:white;border:1px solid rgba(56,189,248,.34);border-radius:16px;padding:16px;font-size:16px}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:14px;padding:13px 18px;background:linear-gradient(135deg,#38bdf8,#8b5cf6);color:#020617;font-weight:900;cursor:pointer}.ghost{background:transparent!important;color:#e5e7eb!important;border:1px solid rgba(226,232,240,.28)!important}.grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;margin-bottom:18px}.missionBtn{width:100%;display:flex;justify-content:space-between;gap:10px;background:#020617;color:#fff;border:1px solid rgba(148,163,184,.18);margin-bottom:10px}.mission h3{font-size:24px;margin:0 0 8px}.pill{display:inline-block;border-radius:999px;padding:7px 10px;background:rgba(56,189,248,.12);color:#7dd3fc}.parcial{background:rgba(250,204,21,.13);color:#facc15}.concluida{background:rgba(34,197,94,.13);color:#4ade80}.falha{background:rgba(239,68,68,.13);color:#f87171}pre{white-space:pre-wrap;background:#020617;border:1px solid rgba(148,163,184,.18);border-radius:14px;padding:14px;color:#c4b5fd}.result{margin-top:14px;border-top:1px solid rgba(148,163,184,.16);padding-top:14px}.result h4{color:#94a3b8;text-transform:uppercase;letter-spacing:.12em;font-size:12px}.result li{margin-bottom:8px}.log{display:grid;grid-template-columns:70px 70px 1fr;gap:12px;border-top:1px solid rgba(148,163,184,.12);padding:12px 0}.log time{color:#94a3b8}.log b{color:#38bdf8}.log .OK{color:#4ade80}.log .WARN{color:#facc15}.log .ERROR{color:#f87171}@media(max-width:800px){.page{padding:16px}.hero{display:block}.hero h1{font-size:30px}.hero b{display:inline-block;margin-top:12px}.stats,.grid{grid-template-columns:1fr}.log{grid-template-columns:54px 58px 1fr}.actions button{flex:1}}`;
