@@ -24,7 +24,7 @@ export function FactoryFab() {
       level: "ok",
       message: "App aprovado pelo operador — release liberado",
     });
-    notify("mission_completed", "AI Factory", "App aprovado ✅");
+    notify({ kind: "mission_completed", title: "AI Factory", body: "App aprovado ✅" });
   };
 
   return (
