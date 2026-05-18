@@ -25,6 +25,7 @@ export interface SmartLog {
   id: string;
   projectId: string | null;
   projectName?: string;
+  module?: string;
   type: "system" | "monitor" | "forge" | "doctor" | "connect" | "voice";
   level: "info" | "ok" | "warn" | "error";
   message: string;
