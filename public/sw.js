@@ -23,8 +23,8 @@ self.addEventListener('message', (event) => {
     const { title, body, tag } = data;
     self.registration.showNotification(title || 'AI Factory', {
       body: body || '',
-      icon: '/ai-factory-icon.svg',
-      badge: '/ai-factory-icon.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       tag: tag || 'ai-factory',
       vibrate: [80, 40, 80],
       renotify: true,
@@ -38,8 +38,8 @@ self.addEventListener('push', (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title, {
       body: payload.body,
-      icon: '/ai-factory-icon.svg',
-      badge: '/ai-factory-icon.svg',
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
       vibrate: [80, 40, 80],
     })
   );

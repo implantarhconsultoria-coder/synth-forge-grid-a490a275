@@ -60,8 +60,8 @@ export async function notify({ kind, title, body, force }: NotifyOptions): Promi
         if (reg) {
           await reg.showNotification(title, {
             body,
-            icon: "/ai-factory-icon.svg",
-            badge: "/ai-factory-icon.svg",
+            icon: "/icon-192.png",
+            badge: "/icon-192.png",
             tag: kind,
             renotify: true,
           } as NotificationOptions);
@@ -69,7 +69,7 @@ export async function notify({ kind, title, body, force }: NotifyOptions): Promi
         }
       } catch {}
       try {
-        new Notification(title, { body, icon: "/ai-factory-icon.svg" });
+        new Notification(title, { body, icon: "/icon-192.png" });
         return true;
       } catch {}
     }
