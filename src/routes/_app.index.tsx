@@ -106,10 +106,10 @@ function CommandCenter() {
               <Rocket className="size-5" /> Iniciar missão
             </button>
             <Link
-              to="/admin"
+              to="/queue"
               className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl glass border border-primary/30 px-6 text-base font-bold sm:w-auto"
             >
-              <Cpu className="size-5 text-primary" /> Nexus Command
+              <ListChecks className="size-5 text-primary" /> Ver fila
             </Link>
           </div>
         </div>
