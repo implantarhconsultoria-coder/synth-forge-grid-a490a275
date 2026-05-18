@@ -1,31 +1,21 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
-  LayoutDashboard,
-  FolderKanban,
-  Hammer,
-  Stethoscope,
-  Cable,
-  Mic,
-  Lock,
-  Settings,
+  Rocket,
+  ListChecks,
   Activity,
+  Settings,
   Sparkles,
-  Brain,
   RefreshCw,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { ensureServiceWorker, startWorkerMonitor, type WorkerStatus } from "@/lib/notifications";
 
 const NAV = [
-  { to: "/", label: "Command Center", icon: LayoutDashboard },
-  { to: "/projects", label: "Projetos", icon: FolderKanban },
-  { to: "/forge", label: "Forge", icon: Hammer },
-  { to: "/doctor", label: "Doctor", icon: Stethoscope },
-  { to: "/connect", label: "Connect", icon: Cable },
-  { to: "/voice", label: "Voice Command", icon: Mic },
-  { to: "/admin", label: "Núcleo Factory", icon: Brain },
-  { to: "/private", label: "Private Mode", icon: Lock },
+  { to: "/", label: "Missão", icon: Rocket },
+  { to: "/queue", label: "Fila", icon: ListChecks },
+  { to: "/logs", label: "Logs", icon: Activity },
   { to: "/settings", label: "Configurações", icon: Settings },
 ] as const;
 
@@ -33,12 +23,15 @@ export function AppShell() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const [mobileOpen, setMobileOpen] = useState(false);
   const [now, setNow] = useState(() => new Date());
+  const [worker, setWorker] = useState<WorkerStatus>("unknown");
   useFactoryData();
   useEffect(() => {
     void factoryData.hydrate();
+    void ensureServiceWorker();
     const stop = factoryData.startRealtime();
+    const stopWorker = startWorkerMonitor(setWorker);
     const t = setInterval(() => setNow(new Date()), 1000);
-    return () => { stop?.(); clearInterval(t); };
+    return () => { stop?.(); stopWorker?.(); clearInterval(t); };
   }, []);
 
   return (
