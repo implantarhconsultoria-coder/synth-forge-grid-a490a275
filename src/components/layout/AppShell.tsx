@@ -6,6 +6,8 @@ import {
   Activity,
   RefreshCw,
   Menu,
+  Search,
+  Clock,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
