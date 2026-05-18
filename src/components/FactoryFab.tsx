@@ -13,7 +13,7 @@ export function FactoryFab() {
       level: "info",
       message: "Análise da AI Factory iniciada pelo operador",
     });
-    notify("mission_started", "AI Factory", "Análise iniciada");
+    notify({ kind: "mission_started", title: "AI Factory", body: "Análise iniciada" });
     window.dispatchEvent(new CustomEvent("factory:open-analysis"));
   };
 
