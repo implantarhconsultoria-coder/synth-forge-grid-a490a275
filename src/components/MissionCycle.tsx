@@ -6,6 +6,7 @@ import {
 import { analyzeMissionLocal, type Diagnosis } from "@/lib/factory-analyze";
 import { factoryData } from "@/lib/factory-data";
 import { notify } from "@/lib/notifications";
+import { buildScopedMission } from "@/config/factoryModules";
 
 type StepStatus = "pendente" | "preparado" | "corrigido" | "falha";
 interface Step {
