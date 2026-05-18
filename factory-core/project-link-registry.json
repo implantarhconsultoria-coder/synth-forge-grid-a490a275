@@ -1,0 +1,70 @@
+{
+  "updatedAt": "2026-05-17T22:30:00.000Z",
+  "owner": "implantarhconsultoria-coder",
+  "policy": "GITHUB_FIRST",
+  "projects": [
+    {
+      "name": "AI Factory",
+      "type": "core",
+      "githubRepo": "implantarhconsultoria-coder/synth-forge-grid",
+      "status": "linked",
+      "executor": "github"
+    },
+    {
+      "name": "TOPAC RH PRO",
+      "type": "client_system",
+      "githubRepo": "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5",
+      "alternateRepos": [
+        "implantarhconsultoria-coder/topac-rh-pro",
+        "implantarhconsultoria-coder/rh-prospera-hub",
+        "implantarhconsultoria-coder/rh-prospera-hub-cee76ce8"
+      ],
+      "status": "linked",
+      "executor": "github"
+    },
+    {
+      "name": "Doctor PRO",
+      "type": "factory_module",
+      "githubRepo": "implantarhconsultoria-coder/doctor-code-fix",
+      "status": "linked",
+      "executor": "github"
+    },
+    {
+      "name": "VIDEO HUB",
+      "type": "lovable_app",
+      "lovableProjectId": "eacb99bd-89b7-489b-b89e-eec47c881cf1",
+      "lovableUrl": "https://lovable.dev/projects/eacb99bd-89b7-489b-b89e-eec47c881cf1",
+      "publishedUrl": "https://youtube-joy-stream.lovable.app",
+      "githubRepo": null,
+      "status": "needs_github_link_inside_lovable",
+      "executor": "lovable_until_repo_linked"
+    },
+    {
+      "name": "PULZR",
+      "type": "lovable_app",
+      "githubRepo": null,
+      "status": "needs_identification_or_github_link",
+      "executor": "lovable_until_repo_linked"
+    },
+    {
+      "name": "Flow",
+      "type": "lovable_app",
+      "githubRepo": null,
+      "status": "needs_identification_or_github_link",
+      "executor": "lovable_until_repo_linked"
+    },
+    {
+      "name": "Nexus Lead IA",
+      "type": "lovable_app",
+      "githubRepo": null,
+      "status": "needs_identification_or_github_link",
+      "executor": "lovable_until_repo_linked"
+    }
+  ],
+  "rules": {
+    "newProjectsMustStartWithGitHub": true,
+    "factoryCanAutoExecuteWhenGithubRepoExists": true,
+    "lovableNeedsManualRepoLinkOrOfficialBridge": true,
+    "doNotMarkLovableTaskDoneWithoutRepoCommitOrLovableConfirmation": true
+  }
+}
