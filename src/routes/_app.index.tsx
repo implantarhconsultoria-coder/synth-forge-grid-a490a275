@@ -4,7 +4,7 @@ import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { MissionModal } from "@/components/MissionModal";
 import {
-  Activity, Cpu, Radio, Rocket, ListChecks, ArrowUpRight,
+  Activity, Radio, Rocket, ListChecks, ArrowUpRight,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_app/")({
