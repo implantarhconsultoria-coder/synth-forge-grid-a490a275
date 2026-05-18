@@ -166,6 +166,11 @@ function LogsPage() {
                   <span className={cn("px-1.5 py-0.5 rounded border text-[9px] uppercase tracking-wide", levelBadge[l.level])}>
                     {l.level}
                   </span>
+                  {l.module && (
+                    <span className={cn("px-1.5 py-0.5 rounded border text-[9px] uppercase tracking-wide font-semibold", projectColor(`mod:${l.module}`))}>
+                      {l.module}
+                    </span>
+                  )}
                   {tag && (
                     <span className={cn("px-1.5 py-0.5 rounded border text-[9px] uppercase tracking-wide font-semibold", projectColor(tag))}>
                       {tag}
