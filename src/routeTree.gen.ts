@@ -21,6 +21,7 @@ import { Route as AppForgeRouteImport } from './routes/_app.forge'
 import { Route as AppDoctorRouteImport } from './routes/_app.doctor'
 import { Route as AppConnectRouteImport } from './routes/_app.connect'
 import { Route as AppAdminRouteImport } from './routes/_app.admin'
+import { Route as ApiPublicFactoryTickRouteImport } from './routes/api/public/factory.tick'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -81,6 +82,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicFactoryTickRoute = ApiPublicFactoryTickRouteImport.update({
+  id: '/api/public/factory/tick',
+  path: '/api/public/factory/tick',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -94,6 +100,7 @@ export interface FileRoutesByFullPath {
   '/queue': typeof AppQueueRoute
   '/settings': typeof AppSettingsRoute
   '/voice': typeof AppVoiceRoute
+  '/api/public/factory/tick': typeof ApiPublicFactoryTickRoute
 }
 export interface FileRoutesByTo {
   '/admin': typeof AppAdminRoute
@@ -107,6 +114,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AppSettingsRoute
   '/voice': typeof AppVoiceRoute
   '/': typeof AppIndexRoute
+  '/api/public/factory/tick': typeof ApiPublicFactoryTickRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -122,6 +130,7 @@ export interface FileRoutesById {
   '/_app/settings': typeof AppSettingsRoute
   '/_app/voice': typeof AppVoiceRoute
   '/_app/': typeof AppIndexRoute
+  '/api/public/factory/tick': typeof ApiPublicFactoryTickRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/queue'
     | '/settings'
     | '/voice'
+    | '/api/public/factory/tick'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/admin'
@@ -150,6 +160,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/voice'
     | '/'
+    | '/api/public/factory/tick'
   id:
     | '__root__'
     | '/_app'
@@ -164,10 +175,12 @@ export interface FileRouteTypes {
     | '/_app/settings'
     | '/_app/voice'
     | '/_app/'
+    | '/api/public/factory/tick'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
+  ApiPublicFactoryTickRoute: typeof ApiPublicFactoryTickRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -256,6 +269,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/factory/tick': {
+      id: '/api/public/factory/tick'
+      path: '/api/public/factory/tick'
+      fullPath: '/api/public/factory/tick'
+      preLoaderRoute: typeof ApiPublicFactoryTickRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -291,7 +311,18 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
+  ApiPublicFactoryTickRoute: ApiPublicFactoryTickRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
