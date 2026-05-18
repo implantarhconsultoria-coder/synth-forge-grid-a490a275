@@ -114,13 +114,20 @@ export function AppShell() {
             <span className="hidden sm:inline">· região: br-sp · v2.4.1</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">
+            <button
+              onClick={() => setPaletteOpen(true)}
+              className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Buscar / executar (⌘K)"
+            >
               <kbd className="font-mono">⌘</kbd>
               <kbd className="font-mono">K</kbd>
               <span>Buscar / executar</span>
-            </div>
+            </button>
             <button
-              onClick={() => factoryData.refresh()}
+              onClick={async () => {
+                await factoryData.refresh();
+                toast.success("Dados atualizados");
+              }}
               className="flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
               title="Atualizar dados"
             >
