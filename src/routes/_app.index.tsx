@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { SourceBadge, DataSourceFooter } from "@/components/SourceBadge";
 import { MissionModal } from "@/components/MissionModal";
+import { MissionCycle } from "@/components/MissionCycle";
 import {
   Activity, Radio, Rocket, ListChecks, Settings as SettingsIcon, ArrowUpRight,
 } from "lucide-react";
@@ -107,6 +108,9 @@ function CommandCenter() {
           </div>
         </div>
       </section>
+
+      {/* MISSION CYCLE */}
+      <MissionCycle />
 
       {/* QUICK ACTIONS */}
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
