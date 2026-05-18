@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { FactoryFab } from "@/components/FactoryFab";
+import { CommandPalette } from "@/components/CommandPalette";
+import { toast } from "sonner";
 import aiFactoryLogo from "@/assets/ai-factory-logo.png";
 
 const NAV = [
