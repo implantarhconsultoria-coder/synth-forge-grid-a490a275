@@ -481,20 +481,23 @@ export const factoryData = {
     return m;
   },
 
-  async createExecutionMission(payload: { title: string; objective?: string; project?: string }) {
+  async createExecutionMission(payload: { title: string; objective?: string; project?: string; repo?: string; targetPath?: string }) {
     const queuePayload = {
       type: "project_update",
-      status: "open",
+      status: "pending",
       action: "execute_mission",
       payload: {
-        projectRoot: "/workspaces/rh-prospera-hub",
         project: payload.project ?? "AI FACTORY",
         objective: payload.objective ?? payload.title,
-        files: [],
+        repo: payload.repo,
+        targetPath: payload.targetPath ?? "docs/ai-factory",
       },
     };
     const inserted = await supabaseApi.insertExecutionQueue(queuePayload);
-    // Sempre registra missão local também
+    // Dispara o worker real (fire-and-forget)
+    if (typeof window !== "undefined") {
+      fetch("/api/public/factory/tick", { method: "POST" }).catch(() => {});
+    }
     const m: Mission = {
       id: str((inserted as any)?.id ?? uid()),
       title: payload.title,
@@ -504,7 +507,13 @@ export const factoryData = {
       source: inserted ? "real" : "mock",
     };
     state.missions = [m, ...state.missions];
-    this.addLog({ type: "system", level: "info", message: `Missão enviada ao núcleo IA: ${payload.title}` });
+    this.addLog({
+      type: "system",
+      level: inserted ? "ok" : "warn",
+      message: inserted
+        ? `Missão REAL enfileirada (worker disparado): ${payload.title}`
+        : `Falha ao gravar na fila real, missão ficou local: ${payload.title}`,
+    });
     emit();
     return m;
   },
