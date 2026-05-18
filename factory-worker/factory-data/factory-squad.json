@@ -1,0 +1,39 @@
+{
+  "enabled": true,
+  "mode": "SQUAD_PRO_EXCELLENCE",
+  "squad": [
+    {
+      "id": "architect",
+      "name": "Arquiteto",
+      "job": "divide missões em tarefas pequenas e seguras"
+    },
+    {
+      "id": "builder",
+      "name": "Builder",
+      "job": "executa alterações incrementais no GitHub"
+    },
+    {
+      "id": "doctor",
+      "name": "Doctor",
+      "job": "detecta riscos, erros e regressões"
+    },
+    {
+      "id": "qa",
+      "name": "QA",
+      "job": "valida build, navegação e critérios de aceite"
+    },
+    {
+      "id": "scribe",
+      "name": "Scribe",
+      "job": "documenta decisões, commits e próximos passos"
+    }
+  ],
+  "guardrails": [
+    "Não refazer projeto do zero",
+    "Não quebrar login, permissões, menus ou dados existentes",
+    "Mudanças pequenas, auditáveis e reversíveis",
+    "Áreas sensíveis exigem aprovação humana"
+  ],
+  "defaultProject": "TOPAC RH",
+  "defaultRepository": "implantarhconsultoria-coder/rh-prospera-hub-70cb89a5"
+}
