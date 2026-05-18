@@ -7,7 +7,7 @@ import { MissionCycle } from "@/components/MissionCycle";
 import {
   Activity, Radio, Rocket, ListChecks, Settings as SettingsIcon, ArrowUpRight,
 } from "lucide-react";
-import aiFactoryIcon from "@/assets/ai-factory-icon.png";
+import aiFactoryIcon from "@/assets/ai-factory-logo.png";
 
 export const Route = createFileRoute("/_app/")({
   component: CommandCenter,
