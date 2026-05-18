@@ -1,5 +1,7 @@
 // AI FACTORY — Supabase API layer
-import { supabase } from "./supabase-client";
+import { supabase as supabaseTyped } from "./supabase-client";
+// Cast como `any` para tolerar tabelas legadas que ainda não estão no types.ts
+const supabase: any = supabaseTyped;
 
 async function safe<T>(fn: () => Promise<{ data: T | null; error: unknown }>): Promise<T | null> {
   try {

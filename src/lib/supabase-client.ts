@@ -1,12 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
-
-// Cliente Supabase publishable (frontend-safe).
-// Usa apenas anon/publishable key. Sem auth, sem service_role.
-const SUPABASE_URL = "https://bywsbeunrmbaqhvzluji.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_lSr1xOlGXxlQDSATqC-MRQ_t7SoIRQJ";
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: false, autoRefreshToken: false },
-});
-
+// Reexporta o cliente Supabase oficial do projeto Lovable Cloud conectado.
+// NÃO use credenciais hardcoded — o cliente gerado em integrations/supabase/client
+// já aponta para o projeto correto (rhgurxtnfzjngemzrfqf).
+export { supabase } from "@/integrations/supabase/client";
 export const SUPABASE_ENABLED = true;
