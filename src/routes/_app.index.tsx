@@ -67,42 +67,50 @@ function CommandCenter() {
       <MissionModal open={missionOpen} onOpenChange={setMissionOpen} />
 
       {/* HERO */}
-      <section className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-[#0a1428] via-[#0b1a2e] to-[#11102a] p-5 sm:p-8 lg:p-10">
+      <section className="relative overflow-hidden rounded-3xl border border-primary/20 bg-gradient-to-br from-[#0a1428] via-[#0b1a2e] to-[#11102a] p-6 sm:p-10 lg:p-12">
         <div className="absolute -top-20 -right-20 size-64 rounded-full bg-primary/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-10 size-72 rounded-full bg-accent/20 blur-3xl" />
         <div className="absolute inset-0 grid-bg opacity-30" />
 
-        <div className="relative space-y-5">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-success">
-              <Radio className="size-3 animate-pulse" /> Núcleo IA online
+        <div className="relative flex flex-col items-center text-center space-y-6">
+          <div className="inline-flex items-center gap-2 rounded-full border border-success/30 bg-success/10 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-success">
+            <Radio className="size-3 animate-pulse" /> Núcleo IA online
+          </div>
+
+          <div className="relative">
+            <div className="absolute inset-0 blur-3xl bg-gradient-to-br from-primary/30 to-accent/30 rounded-full" />
+            <img
+              src={aiFactoryLogo}
+              alt="AI Factory"
+              width={1024}
+              height={1024}
+              className="relative w-44 sm:w-56 lg:w-64 aspect-square object-contain drop-shadow-[0_0_40px_rgba(139,92,246,0.5)]"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <div className="font-black tracking-[0.32em] text-2xl sm:text-3xl lg:text-4xl bg-gradient-to-r from-primary via-white to-accent bg-clip-text text-transparent">
+              AI FACTORY
             </div>
-            <div className="inline-flex items-center gap-2 rounded-full glass px-3 py-1.5 font-mono text-xs text-foreground">
-              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-              {clock.toLocaleTimeString("pt-BR")}
+            <div className="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-muted-foreground">
+              ImplantaRH PRO
             </div>
           </div>
 
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.32em] text-primary">AI FACTORY</p>
-            <h1 className="mt-3 text-4xl font-black leading-[0.95] tracking-tight bg-gradient-to-br from-white via-primary/90 to-accent bg-clip-text text-transparent sm:text-6xl lg:text-7xl">
-              Inteligência<br className="sm:hidden" /> operacional.
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base lg:text-lg">
-              Centro de comando inteligente da ImplantaRH para criar, monitorar, corrigir e automatizar projetos digitais em tempo real.
-            </p>
-          </div>
+          <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
+            Centro de comando inteligente da ImplantaRH para criar, monitorar, corrigir e automatizar projetos digitais em tempo real.
+          </p>
 
-          <div className="grid gap-3 sm:flex sm:flex-wrap">
+          <div className="grid gap-3 sm:flex sm:flex-wrap sm:justify-center pt-2">
             <button
               onClick={() => setMissionOpen(true)}
-              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-accent px-6 text-base font-bold text-primary-foreground glow-border shadow-[0_10px_40px_rgba(56,189,248,0.35)] active:scale-[0.98] sm:w-auto"
+              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-primary to-accent px-8 text-base font-bold text-primary-foreground glow-border shadow-[0_10px_40px_rgba(139,92,246,0.4)] active:scale-[0.98] sm:w-auto"
             >
               <Rocket className="size-5" /> Iniciar missão
             </button>
             <Link
               to="/queue"
-              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl glass border border-primary/30 px-6 text-base font-bold sm:w-auto"
+              className="inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-2xl glass border border-primary/30 px-8 text-base font-bold sm:w-auto"
             >
               <ListChecks className="size-5 text-primary" /> Ver fila
             </Link>
