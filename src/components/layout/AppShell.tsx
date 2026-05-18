@@ -11,6 +11,7 @@ import {
 import { useEffect, useState } from "react";
 import { factoryData, useFactoryData } from "@/lib/factory-data";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
+import { FactoryFab } from "@/components/FactoryFab";
 
 const NAV = [
   { to: "/", label: "Missão", icon: Rocket },
@@ -145,6 +146,7 @@ export function AppShell() {
         </footer>
       </div>
       <MobileBottomNav />
+      <FactoryFab />
     </div>
   );
 }
