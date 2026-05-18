@@ -13,8 +13,10 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as AppIndexRouteImport } from './routes/_app.index'
 import { Route as AppVoiceRouteImport } from './routes/_app.voice'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppQueueRouteImport } from './routes/_app.queue'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppPrivateRouteImport } from './routes/_app.private'
+import { Route as AppLogsRouteImport } from './routes/_app.logs'
 import { Route as AppForgeRouteImport } from './routes/_app.forge'
 import { Route as AppDoctorRouteImport } from './routes/_app.doctor'
 import { Route as AppConnectRouteImport } from './routes/_app.connect'
@@ -39,6 +41,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppQueueRoute = AppQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -47,6 +54,11 @@ const AppProjectsRoute = AppProjectsRouteImport.update({
 const AppPrivateRoute = AppPrivateRouteImport.update({
   id: '/private',
   path: '/private',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppLogsRoute = AppLogsRouteImport.update({
+  id: '/logs',
+  path: '/logs',
   getParentRoute: () => AppRoute,
 } as any)
 const AppForgeRoute = AppForgeRouteImport.update({
@@ -76,8 +88,10 @@ export interface FileRoutesByFullPath {
   '/connect': typeof AppConnectRoute
   '/doctor': typeof AppDoctorRoute
   '/forge': typeof AppForgeRoute
+  '/logs': typeof AppLogsRoute
   '/private': typeof AppPrivateRoute
   '/projects': typeof AppProjectsRoute
+  '/queue': typeof AppQueueRoute
   '/settings': typeof AppSettingsRoute
   '/voice': typeof AppVoiceRoute
 }
@@ -86,8 +100,10 @@ export interface FileRoutesByTo {
   '/connect': typeof AppConnectRoute
   '/doctor': typeof AppDoctorRoute
   '/forge': typeof AppForgeRoute
+  '/logs': typeof AppLogsRoute
   '/private': typeof AppPrivateRoute
   '/projects': typeof AppProjectsRoute
+  '/queue': typeof AppQueueRoute
   '/settings': typeof AppSettingsRoute
   '/voice': typeof AppVoiceRoute
   '/': typeof AppIndexRoute
@@ -99,8 +115,10 @@ export interface FileRoutesById {
   '/_app/connect': typeof AppConnectRoute
   '/_app/doctor': typeof AppDoctorRoute
   '/_app/forge': typeof AppForgeRoute
+  '/_app/logs': typeof AppLogsRoute
   '/_app/private': typeof AppPrivateRoute
   '/_app/projects': typeof AppProjectsRoute
+  '/_app/queue': typeof AppQueueRoute
   '/_app/settings': typeof AppSettingsRoute
   '/_app/voice': typeof AppVoiceRoute
   '/_app/': typeof AppIndexRoute
@@ -113,8 +131,10 @@ export interface FileRouteTypes {
     | '/connect'
     | '/doctor'
     | '/forge'
+    | '/logs'
     | '/private'
     | '/projects'
+    | '/queue'
     | '/settings'
     | '/voice'
   fileRoutesByTo: FileRoutesByTo
@@ -123,8 +143,10 @@ export interface FileRouteTypes {
     | '/connect'
     | '/doctor'
     | '/forge'
+    | '/logs'
     | '/private'
     | '/projects'
+    | '/queue'
     | '/settings'
     | '/voice'
     | '/'
@@ -135,8 +157,10 @@ export interface FileRouteTypes {
     | '/_app/connect'
     | '/_app/doctor'
     | '/_app/forge'
+    | '/_app/logs'
     | '/_app/private'
     | '/_app/projects'
+    | '/_app/queue'
     | '/_app/settings'
     | '/_app/voice'
     | '/_app/'
@@ -176,6 +200,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/queue': {
+      id: '/_app/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof AppQueueRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/projects': {
       id: '/_app/projects'
       path: '/projects'
@@ -188,6 +219,13 @@ declare module '@tanstack/react-router' {
       path: '/private'
       fullPath: '/private'
       preLoaderRoute: typeof AppPrivateRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/logs': {
+      id: '/_app/logs'
+      path: '/logs'
+      fullPath: '/logs'
+      preLoaderRoute: typeof AppLogsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/forge': {
@@ -226,8 +264,10 @@ interface AppRouteChildren {
   AppConnectRoute: typeof AppConnectRoute
   AppDoctorRoute: typeof AppDoctorRoute
   AppForgeRoute: typeof AppForgeRoute
+  AppLogsRoute: typeof AppLogsRoute
   AppPrivateRoute: typeof AppPrivateRoute
   AppProjectsRoute: typeof AppProjectsRoute
+  AppQueueRoute: typeof AppQueueRoute
   AppSettingsRoute: typeof AppSettingsRoute
   AppVoiceRoute: typeof AppVoiceRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -238,8 +278,10 @@ const AppRouteChildren: AppRouteChildren = {
   AppConnectRoute: AppConnectRoute,
   AppDoctorRoute: AppDoctorRoute,
   AppForgeRoute: AppForgeRoute,
+  AppLogsRoute: AppLogsRoute,
   AppPrivateRoute: AppPrivateRoute,
   AppProjectsRoute: AppProjectsRoute,
+  AppQueueRoute: AppQueueRoute,
   AppSettingsRoute: AppSettingsRoute,
   AppVoiceRoute: AppVoiceRoute,
   AppIndexRoute: AppIndexRoute,
@@ -253,3 +295,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
