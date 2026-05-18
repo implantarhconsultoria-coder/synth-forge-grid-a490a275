@@ -33,7 +33,7 @@ function classify(text: string, diag: Diagnosis): StepStatus {
 }
 
 export function MissionCycle() {
-  const analyze = useServerFn(analyzeMission);
+  const analyze = (p: string) => Promise.resolve(analyzeMissionLocal(p));
   const [prompt, setPrompt] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [diag, setDiag] = useState<Diagnosis | null>(null);
@@ -51,10 +51,10 @@ export function MissionCycle() {
     setError(null);
     factoryData.addLog({ type: "system", level: "info", message: `Ciclo de missão iniciado: "${prompt.slice(0, 80)}"` });
     try {
-      const result = await analyze({ data: { prompt } });
+      const result = await analyze(prompt);
       setDiag(result);
       const toCheck = result.toValidate?.length ? result.toValidate : [result.headline];
-      setSteps(toCheck.map((t, i) => ({ id: `s${i}`, text: t, status: "pendente" })));
+      setSteps(toCheck.map((t: string, i: number) => ({ id: `s${i}`, text: t, status: "pendente" })));
       setPhase("ready");
     } catch (e: any) {
       setError(e?.message || "Falha na análise");
@@ -93,10 +93,10 @@ export function MissionCycle() {
     setSteps((prev) => prev.map((s) => ({ ...s, status: "pendente" })));
     setPhase("analyzing");
     try {
-      const result = await analyze({ data: { prompt } });
+      const result = await analyze(prompt);
       setDiag(result);
       const toCheck = result.toValidate?.length ? result.toValidate : [result.headline];
-      setSteps(toCheck.map((t, i) => ({ id: `s${i}`, text: t, status: "pendente" })));
+      setSteps(toCheck.map((t: string, i: number) => ({ id: `s${i}`, text: t, status: "pendente" })));
       setPhase("ready");
       factoryData.addLog({ type: "system", level: "info", message: `Revalidação executada: ${result.headline}` });
     } catch (e: any) {
