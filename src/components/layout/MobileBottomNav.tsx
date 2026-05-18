@@ -1,19 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, FolderKanban, Brain, Stethoscope, User } from "lucide-react";
+import { Rocket, ListChecks, Activity, Settings } from "lucide-react";
 
 const ITEMS = [
-  { to: "/", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/projects", label: "Projetos", icon: FolderKanban },
-  { to: "/admin", label: "Nexus", icon: Brain, primary: true },
-  { to: "/doctor", label: "Correções", icon: Stethoscope },
-  { to: "/settings", label: "Perfil", icon: User },
+  { to: "/", label: "Missão", icon: Rocket, primary: true },
+  { to: "/queue", label: "Fila", icon: ListChecks },
+  { to: "/logs", label: "Logs", icon: Activity },
+  { to: "/settings", label: "Config", icon: Settings },
 ] as const;
 
 export function MobileBottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   return (
     <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-30 px-2 pb-2 pt-2">
-      <div className="glass rounded-2xl border border-border/60 backdrop-blur-xl bg-background/85 grid grid-cols-5 gap-1 px-1 py-1.5 shadow-[0_-8px_30px_rgba(56,189,248,0.15)]">
+      <div className="rounded-2xl border border-border/60 backdrop-blur-xl bg-[#050b18]/95 grid grid-cols-4 gap-1 px-1 py-1.5 shadow-[0_-8px_30px_rgba(56,189,248,0.15)]">
         {ITEMS.map((it) => {
           const Icon = it.icon;
           const active = pathname === it.to;

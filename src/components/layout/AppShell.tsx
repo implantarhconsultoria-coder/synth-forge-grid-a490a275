@@ -107,12 +107,15 @@ export function AppShell() {
             className="lg:hidden rounded-md p-2 hover:bg-secondary/50"
             aria-label="Menu"
           >
-            <LayoutDashboard className="size-4" />
+            <Rocket className="size-4" />
           </button>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-success pulse-dot text-success" />
-            <span>Núcleo IA online</span>
-            <span className="hidden sm:inline">· região: br-sp · v2.4.1</span>
+            <span
+              className={`size-1.5 rounded-full ${
+                worker === "online" ? "bg-success" : worker === "offline" ? "bg-destructive" : "bg-muted-foreground"
+              } pulse-dot`}
+            />
+            <span>Worker {worker === "online" ? "ONLINE" : worker === "offline" ? "offline" : "—"}</span>
           </div>
           <div className="ml-auto flex items-center gap-3">
             <div className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground">
