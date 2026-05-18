@@ -14,7 +14,152 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ai_execution_queue: {
+        Row: {
+          action: string | null
+          attempts: number
+          created_at: string
+          error: string | null
+          finished_at: string | null
+          id: string
+          mission_id: string | null
+          payload: Json
+          result: Json | null
+          started_at: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          action?: string | null
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          mission_id?: string | null
+          payload?: Json
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          type?: string
+        }
+        Update: {
+          action?: string | null
+          attempts?: number
+          created_at?: string
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          mission_id?: string | null
+          payload?: Json
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_execution_queue_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "missions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      missions: {
+        Row: {
+          created_at: string
+          id: string
+          module: string | null
+          objective: string | null
+          payload: Json | null
+          priority: string
+          project: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module?: string | null
+          objective?: string | null
+          payload?: Json | null
+          priority?: string
+          project?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module?: string | null
+          objective?: string | null
+          payload?: Json | null
+          priority?: string
+          project?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      projects: {
+        Row: {
+          created_at: string
+          id: string
+          metadata: Json | null
+          name: string
+          repo: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name: string
+          repo?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          name?: string
+          repo?: string | null
+        }
+        Relationships: []
+      }
+      smart_logs: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          message: string
+          metadata: Json | null
+          module: string | null
+          project: string | null
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: string
+          message: string
+          metadata?: Json | null
+          module?: string | null
+          project?: string | null
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          message?: string
+          metadata?: Json | null
+          module?: string | null
+          project?: string | null
+          type?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
