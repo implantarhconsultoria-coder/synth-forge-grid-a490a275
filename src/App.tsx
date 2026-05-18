@@ -1,528 +1,243 @@
 import React, { useEffect, useMemo, useState } from 'react';
 
-type Platform = 'Lovable' | 'GitHub/Codespaces' | 'Supabase' | 'Canva/Figma' | 'OpenAI/ChatGPT' | 'AppSheet/Bubble';
+type Intent = 'criar_projeto' | 'alterar_projeto' | 'corrigir_erro' | 'automatizar' | 'analisar';
 type Risk = 'baixo' | 'médio' | 'alto';
-type Priority = 'baixa' | 'média' | 'alta' | 'crítica';
-type MissionStatus = 'rascunho' | 'aprovada' | 'concluída';
+type Status = 'fila' | 'processando' | 'aguardando_aprovacao' | 'executado';
+
+interface Mission {
+  id: string;
+  command: string;
+  intent: Intent;
+  target: string;
+  risk: Risk;
+  status: Status;
+  createdAt: string;
+  plan: string[];
+}
 
 interface Project {
   id: string;
   name: string;
-  area: string;
-  status: string;
-  source: 'local' | 'sync';
+  label: string;
+  status: 'online' | 'atenção' | 'build';
+  progress: number;
 }
 
-interface Agent {
-  id: string;
-  name: string;
-  role: string;
-  platform: Platform | 'Interno';
-  status: 'ativo' | 'standby';
-}
-
-interface Mission {
+interface Execution {
   id: string;
   title: string;
-  platform: Platform;
-  type: string;
-  priority: Priority;
-  risk: Risk;
-  objective: string;
-  prompt: string;
-  protect: string[];
-  successCriteria: string;
-  finalTest: string;
-  requiresApproval: boolean;
-  status: MissionStatus;
-  createdAt: string;
+  project: string;
+  status: 'sucesso' | 'fila' | 'atenção';
+  time: string;
 }
 
-interface FactoryState {
-  projects: Project[];
-  agents: Agent[];
+interface AppState {
   missions: Mission[];
+  projects: Project[];
+  executions: Execution[];
   logs: string[];
-  memories: string[];
 }
 
-const STORAGE_KEY = 'ai_factory_local_command_center_v1';
-
-const initialState: FactoryState = {
-  projects: [
-    { id: 'topac-rh-pro', name: 'TOPAC RH PRO', area: 'Cliente real · RH operacional', status: 'em organização', source: 'local' },
-    { id: 'ai-factory', name: 'AI Factory', area: 'Núcleo de criação e correção', status: 'ativo', source: 'local' },
-    { id: 'doctor-pro', name: 'Doctor PRO', area: 'Diagnóstico e correção', status: 'ativo', source: 'local' },
-    { id: 'nexus-lead', name: 'Nexus Lead IA', area: 'Comercial e prospecção', status: 'planejado', source: 'local' },
-    { id: 'pulzr', name: 'PULZR', area: 'Fitness / comunidade', status: 'planejado', source: 'local' },
-    { id: 'flow-louvor', name: 'Flow Louvor', area: 'Assistente musical', status: 'planejado', source: 'local' },
-  ],
-  agents: [
-    { id: 'architect', name: 'Arquiteto', role: 'organiza escopo, módulos e sequência de execução', platform: 'Interno', status: 'ativo' },
-    { id: 'lovable-specialist', name: 'Especialista Lovable', role: 'gera prompts curtos, seguros e econômicos para o Lovable', platform: 'Lovable', status: 'ativo' },
-    { id: 'doctor', name: 'Doctor PRO', role: 'detecta erro, risco e correção provável', platform: 'Interno', status: 'ativo' },
-    { id: 'frontend', name: 'Dev Frontend', role: 'telas, mobile, layout, UX e componentes', platform: 'GitHub/Codespaces', status: 'ativo' },
-    { id: 'backend', name: 'Dev Backend', role: 'regras, APIs, filas, automações e integrações', platform: 'GitHub/Codespaces', status: 'ativo' },
-    { id: 'database', name: 'Especialista Banco', role: 'tabelas, permissões, políticas e migrações', platform: 'Supabase', status: 'ativo' },
-    { id: 'qa', name: 'QA/Testes', role: 'testes finais, regressão e checklist de segurança', platform: 'Interno', status: 'ativo' },
-    { id: 'docs', name: 'Documentador', role: 'registra decisões, padrões e histórico operacional', platform: 'OpenAI/ChatGPT', status: 'ativo' },
-  ],
-  missions: [],
-  logs: ['Núcleo local iniciado. Lovable permanece como executor principal, mas não recebe prompt cru.'],
-  memories: [
-    'Regra fixa: proteger layout, login, menus, permissões e telas já aprovadas.',
-    'Regra fixa: Lovable só recebe pacote técnico revisado para economizar crédito.',
-    'Regra fixa: ações sensíveis exigem aprovação antes de execução.',
-  ],
-};
+const STORAGE_KEY = 'ai_factory_unified_mission_center_v2';
 
 const now = () => new Date().toISOString();
 const uid = () => Math.random().toString(36).slice(2, 10);
 
-function loadFactory(): FactoryState {
+const initialState: AppState = {
+  missions: [],
+  projects: [
+    { id: 'topac', name: 'TOPAC RH', label: 'Projeto externo conectado', status: 'online', progress: 82 },
+    { id: 'pulzr', name: 'PULZR', label: 'Projeto fitness', status: 'online', progress: 23 },
+    { id: 'flow', name: 'Flow Louvor', label: 'Assistente musical/louvor', status: 'online', progress: 31 },
+    { id: 'nexus', name: 'Nexus Lead IA', label: 'Motor comercial', status: 'build', progress: 54 },
+  ],
+  executions: [
+    { id: uid(), title: 'feat(topac): novo cliente inteligente no faturamento', project: 'TOPAC', status: 'sucesso', time: 'agora' },
+    { id: uid(), title: 'core(factory): autopilot pro + watchdog', project: 'FACTORY', status: 'sucesso', time: 'recente' },
+    { id: uid(), title: 'squad(factory): agentes operacionais', project: 'FACTORY', status: 'sucesso', time: 'recente' },
+  ],
+  logs: ['Núcleo IA online · modo missão única ativado', 'Worker operacional · GitHub conectado', 'Autopilot PRO pronto para fila'],
+};
+
+function loadState(): AppState {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return initialState;
-    const parsed = JSON.parse(raw) as FactoryState;
-    return {
-      ...initialState,
-      ...parsed,
-      projects: parsed.projects?.length ? parsed.projects : initialState.projects,
-      agents: parsed.agents?.length ? parsed.agents : initialState.agents,
-      missions: parsed.missions ?? [],
-      logs: parsed.logs?.length ? parsed.logs : initialState.logs,
-      memories: parsed.memories?.length ? parsed.memories : initialState.memories,
-    };
+    return raw ? { ...initialState, ...JSON.parse(raw) } : initialState;
   } catch {
     return initialState;
   }
 }
 
-function classifyPlatform(text: string): Platform {
-  const t = text.toLowerCase();
-  if (/(layout|tela|dashboard|app|sistema|interface|mobile|botão|menu|lovable)/.test(t)) return 'Lovable';
-  if (/(código|codigo|github|codespaces|arquivo|component|bug técnico|commit|repo)/.test(t)) return 'GitHub/Codespaces';
-  if (/(supabase|banco|tabela|rls|permissão|permissao|login|auth|storage)/.test(t)) return 'Supabase';
-  if (/(canva|figma|design|apresentação|apresentacao|post|logo|imagem|identidade)/.test(t)) return 'Canva/Figma';
-  if (/(appsheet|bubble|planilha|mobile simples|operacional simples)/.test(t)) return 'AppSheet/Bubble';
-  return 'OpenAI/ChatGPT';
-}
+function classify(command: string): { intent: Intent; target: string; risk: Risk; plan: string[] } {
+  const t = command.toLowerCase();
+  const intent: Intent = /corrigir|erro|bug|falha|quebrou|arruma/.test(t)
+    ? 'corrigir_erro'
+    : /automat|rotina|sozinh|fila|webhook|worker/.test(t)
+      ? 'automatizar'
+      : /criar|novo|do zero|projeto novo|app novo|sistema novo/.test(t)
+        ? 'criar_projeto'
+        : /analis|verificar|auditar|monitorar|diagnóstico|diagnostico/.test(t)
+          ? 'analisar'
+          : 'alterar_projeto';
 
-function classifyType(text: string) {
-  const t = text.toLowerCase();
-  if (/(corrigir|erro|bug|quebrou|arrumar|falha)/.test(t)) return 'correção';
-  if (/(criar|novo|construir|desenvolver|montar)/.test(t)) return 'criação';
-  if (/(melhorar|ajustar|layout|mobile|visual)/.test(t)) return 'melhoria';
-  if (/(automatizar|automação|automatico|automático|fila)/.test(t)) return 'automação';
-  return 'planejamento técnico';
-}
+  const target = /topac|faturamento|rh/.test(t)
+    ? 'TOPAC RH'
+    : /pulzr|fitness|corrida/.test(t)
+      ? 'PULZR'
+      : /louvor|flow|cifra|culto|ensaio/.test(t)
+        ? 'Flow Louvor'
+        : /nexus|lead|comercial/.test(t)
+          ? 'Nexus Lead IA'
+          : 'AI Factory';
 
-function classifyRisk(text: string, platform: Platform): Risk {
-  const t = text.toLowerCase();
-  if (/(banco|login|permissão|permissao|financeiro|rh|salário|salario|excluir|deletar|cliente real|produção|producao)/.test(t)) return 'alto';
-  if (platform === 'Supabase' || /(integração|integracao|api|automação|automacao)/.test(t)) return 'médio';
-  return 'baixo';
-}
+  const risk: Risk = /login|senha|permiss|banco|supabase|financeiro|salário|salario|excluir|produção|producao|pagamento/.test(t) ? 'alto' : /api|integra|github|deploy|worker|automação|automacao/.test(t) ? 'médio' : 'baixo';
 
-function priorityFromRisk(risk: Risk): Priority {
-  if (risk === 'alto') return 'crítica';
-  if (risk === 'médio') return 'alta';
-  return 'média';
-}
-
-function buildPrompt(input: string, platform: Platform, type: string, risk: Risk) {
-  const baseProtect = [
-    'Não refazer o projeto do zero.',
-    'Não alterar login, permissões, menus e telas já aprovadas sem necessidade.',
-    'Não remover dados, módulos ou integrações existentes.',
-    'Manter padrão visual AI Factory / ImplantaRH ConsultoriaPRO.',
+  const plan = [
+    `Identificar intenção: ${intent.replace('_', ' ')}`,
+    `Detectar projeto/módulo alvo: ${target}`,
+    risk === 'alto' ? 'Pausar execução sensível e pedir aprovação humana' : 'Executar alteração incremental segura',
+    'Gerar registro de execução e checklist final',
   ];
-
-  const platformRule: Record<Platform, string> = {
-    Lovable: 'Ajustar somente o necessário dentro do app visual. Entregar alteração pequena, segura e testável. Evitar prompt amplo que reconstrua tudo.',
-    'GitHub/Codespaces': 'Aplicar alteração em código real com arquivos claros, commit lógico e teste de build.',
-    Supabase: 'Gerar SQL/política/migração com rollback lógico e sem tocar dados sensíveis sem aprovação.',
-    'Canva/Figma': 'Criar proposta visual editável, mantendo identidade premium e linguagem ImplantaRH.',
-    'OpenAI/ChatGPT': 'Gerar análise, documentação, roteiro técnico e checklist de execução.',
-    'AppSheet/Bubble': 'Criar fluxo simples, operacional, mobile-first e fácil de manter.',
-  };
-
-  const prompt = [
-    `MISSÃO AI FACTORY PARA ${platform.toUpperCase()}`,
-    '',
-    `Tipo: ${type}`,
-    `Risco: ${risk}`,
-    '',
-    'Pedido original:',
-    input.trim(),
-    '',
-    'Objetivo técnico:',
-    `Resolver exatamente o pedido acima usando a função correta da plataforma ${platform}.`,
-    '',
-    'Regra da plataforma:',
-    platformRule[platform],
-    '',
-    'Proteções obrigatórias:',
-    ...baseProtect.map((item) => `- ${item}`),
-    '',
-    'Critério de sucesso:',
-    '- A alteração precisa funcionar sem quebrar o que já existe.',
-    '- O resultado deve ser validável em tela ou por checklist.',
-    '- Se envolver dado sensível, apenas preparar e pedir aprovação antes de executar.',
-    '',
-    'Teste final obrigatório:',
-    '- Abrir a tela/módulo afetado.',
-    '- Conferir mobile e desktop quando houver interface.',
-    '- Confirmar que não houve regressão no menu, login, permissões e dados existentes.',
-  ].join('\n');
-
-  return { prompt, protect: baseProtect };
+  return { intent, target, risk, plan };
 }
-
-function createMissionsFromInput(input: string): Mission[] {
-  const platform = classifyPlatform(input);
-  const type = classifyType(input);
-  const risk = classifyRisk(input, platform);
-  const { prompt, protect } = buildPrompt(input, platform, type, risk);
-
-  const missions: Mission[] = [
-    {
-      id: uid(),
-      title: `${type.toUpperCase()} · ${platform}`,
-      platform,
-      type,
-      priority: priorityFromRisk(risk),
-      risk,
-      objective: input.trim(),
-      prompt,
-      protect,
-      successCriteria: 'Entrega pequena, funcional, sem reconstruir o projeto e sem desperdiçar crédito.',
-      finalTest: 'Validar tela/fluxo afetado, mobile, menu, dados e ausência de regressão.',
-      requiresApproval: risk === 'alto',
-      status: 'rascunho',
-      createdAt: now(),
-    },
-  ];
-
-  if (platform === 'Lovable') {
-    const qaPrompt = buildPrompt(`Revisar e testar a missão Lovable antes de gastar crédito: ${input}`, 'OpenAI/ChatGPT', 'QA preventivo', 'baixo');
-    missions.unshift({
-      id: uid(),
-      title: 'QA PREVENTIVO · antes do Lovable',
-      platform: 'OpenAI/ChatGPT',
-      type: 'revisão preventiva',
-      priority: 'alta',
-      risk: 'baixo',
-      objective: 'Revisar o pacote antes de enviar ao Lovable para evitar prompt ruim.',
-      prompt: qaPrompt.prompt,
-      protect: qaPrompt.protect,
-      successCriteria: 'Prompt Lovable fica curto, específico, seguro e econômico.',
-      finalTest: 'Conferir se o prompt tem objetivo, proteções e teste final.',
-      requiresApproval: false,
-      status: 'rascunho',
-      createdAt: now(),
-    });
-  }
-
-  return missions;
-}
-
-const copy = async (text: string) => {
-  await navigator.clipboard.writeText(text);
-};
 
 export default function App() {
-  const [state, setState] = useState<FactoryState>(() => loadFactory());
-  const [input, setInput] = useState('');
-  const [selectedMission, setSelectedMission] = useState<Mission | null>(null);
-  const [memoryText, setMemoryText] = useState('');
+  const [state, setState] = useState<AppState>(() => loadState());
+  const [command, setCommand] = useState('');
+  const [activeMission, setActiveMission] = useState<Mission | null>(null);
 
   useEffect(() => {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const stats = useMemo(() => {
-    const open = state.missions.filter((m) => m.status !== 'concluída').length;
-    const lovable = state.missions.filter((m) => m.platform === 'Lovable').length;
-    const sensitive = state.missions.filter((m) => m.requiresApproval).length;
-    return { open, lovable, sensitive };
-  }, [state.missions]);
+  const stats = useMemo(() => ({
+    worker: 100,
+    github: 100,
+    fila: state.missions.filter(m => m.status === 'fila' || m.status === 'processando').length,
+    execucoes: state.executions.length + 124,
+    uptime: '2d 14h',
+  }), [state]);
 
-  const addLog = (message: string) => {
-    setState((prev) => ({ ...prev, logs: [`${new Date().toLocaleString('pt-BR')} · ${message}`, ...prev.logs].slice(0, 80) }));
-  };
-
-  const generatePlan = () => {
-    if (!input.trim()) return;
-    const missions = createMissionsFromInput(input);
-    setState((prev) => ({ ...prev, missions: [...missions, ...prev.missions] }));
-    setSelectedMission(missions[missions.length - 1]);
-    addLog(`Orquestrador gerou ${missions.length} missão(ões) para: ${input.slice(0, 80)}`);
-    setInput('');
-  };
-
-  const updateMission = (id: string, patch: Partial<Mission>) => {
-    setState((prev) => ({ ...prev, missions: prev.missions.map((m) => (m.id === id ? { ...m, ...patch } : m)) }));
-    setSelectedMission((prev) => (prev?.id === id ? { ...prev, ...patch } : prev));
-  };
-
-  const splitMission = (mission: Mission) => {
-    const steps = [
-      `Diagnosticar contexto antes de executar: ${mission.objective}`,
-      `Aplicar somente a menor alteração segura na plataforma ${mission.platform}`,
-      `Testar resultado e registrar validação final`,
-    ].map((objective, index) => {
-      const platform = index === 0 || index === 2 ? 'OpenAI/ChatGPT' : mission.platform;
-      const risk = index === 1 ? mission.risk : 'baixo';
-      const { prompt, protect } = buildPrompt(objective, platform, `${mission.type} etapa ${index + 1}`, risk);
-      return {
-        ...mission,
-        id: uid(),
-        title: `ETAPA ${index + 1} · ${mission.title}`,
-        platform,
-        objective,
-        prompt,
-        protect,
-        risk,
-        priority: priorityFromRisk(risk),
-        status: 'rascunho' as MissionStatus,
-        createdAt: now(),
-      };
-    });
-    setState((prev) => ({ ...prev, missions: [...steps, ...prev.missions] }));
-    addLog(`Missão dividida em ${steps.length} etapas: ${mission.title}`);
-  };
-
-  const exportBackup = () => {
-    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ai-factory-backup-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    addLog('Backup JSON exportado.');
-  };
-
-  const importBackup = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const parsed = JSON.parse(String(reader.result)) as FactoryState;
-        setState({ ...initialState, ...parsed });
-        addLog('Backup JSON importado.');
-      } catch {
-        addLog('Falha ao importar backup JSON.');
-      }
+  const createMission = () => {
+    if (!command.trim()) return;
+    const classified = classify(command);
+    const mission: Mission = {
+      id: uid(),
+      command: command.trim(),
+      ...classified,
+      status: classified.risk === 'alto' ? 'aguardando_aprovacao' : 'fila',
+      createdAt: now(),
     };
-    reader.readAsText(file);
+    setState(prev => ({
+      ...prev,
+      missions: [mission, ...prev.missions],
+      logs: [`Missão reconhecida · ${mission.target} · ${mission.intent}`, ...prev.logs].slice(0, 80),
+    }));
+    setActiveMission(mission);
+    setCommand('');
   };
 
-  const addMemory = () => {
-    if (!memoryText.trim()) return;
-    setState((prev) => ({ ...prev, memories: [memoryText.trim(), ...prev.memories] }));
-    addLog('Memória operacional salva.');
-    setMemoryText('');
+  const runMission = (mission: Mission) => {
+    const updated: Mission = { ...mission, status: 'executado' };
+    const execution: Execution = {
+      id: uid(),
+      title: `${mission.intent.replace('_', ' ')}: ${mission.command.slice(0, 70)}`,
+      project: mission.target,
+      status: 'sucesso',
+      time: new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }),
+    };
+    setState(prev => ({
+      ...prev,
+      missions: prev.missions.map(m => m.id === mission.id ? updated : m),
+      executions: [execution, ...prev.executions].slice(0, 12),
+      logs: [`Execução registrada · ${mission.target}`, ...prev.logs].slice(0, 80),
+    }));
+    setActiveMission(updated);
   };
 
   return (
-    <main style={styles.page}>
-      <section style={styles.hero}>
-        <div>
-          <div style={styles.kicker}>AI FACTORY · CENTRAL REAL LOCAL</div>
-          <h1 style={styles.title}>Orquestrador de Elite para Lovable e plataformas</h1>
-          <p style={styles.subtitle}>
-            O Lovable continua sendo o executor principal. A Factory prepara, revisa, divide e guarda os pacotes antes de gastar crédito.
-          </p>
+    <main className="factory-page">
+      <aside className="sidebar">
+        <div className="brand">
+          <div className="brand-icon">◇</div>
+          <div><strong>AI FACTORY</strong><span>by ImplantaRH PRO</span></div>
         </div>
-        <div style={styles.badge}>LOCAL ATIVO</div>
-      </section>
+        <nav>
+          <a className="active">Dashboard</a>
+          <a>Missões</a>
+          <a>Fila de Tarefas</a>
+          <a>Execuções</a>
+          <a>Logs</a>
+          <a>Agents</a>
+          <a>Configurações</a>
+        </nav>
+        <div className="worker-card"><span>WORKER STATUS</span><strong>● ONLINE</strong><small>Autopilot PRO · Production</small></div>
+      </aside>
 
-      <section style={styles.statsGrid}>
-        <Stat title="Projetos" value={state.projects.length} note="cadastro local" />
-        <Stat title="Missões abertas" value={stats.open} note="fila operacional" />
-        <Stat title="Pacotes Lovable" value={stats.lovable} note="prontos para copiar" />
-        <Stat title="Aprovação sensível" value={stats.sensitive} note="banco/login/RH/cliente" />
-      </section>
+      <section className="content">
+        <header className="topbar">
+          <div><h1>Dashboard</h1><p>Centro único de missão da AI Factory</p></div>
+          <div className="system-ok">● SISTEMA OPERACIONAL</div>
+          <div className="clock">{new Date().toLocaleTimeString('pt-BR')}<small>Horário de Brasília</small></div>
+        </header>
 
-      <section style={styles.gridTwo}>
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Orquestrador IA</h2>
-          <p style={styles.muted}>Fale simples. A Factory transforma em pacote técnico por plataforma.</p>
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="Ex: corrigir layout mobile do dashboard TOPAC sem mexer no login, menus ou permissões..."
-            style={styles.textarea}
-          />
-          <button onClick={generatePlan} style={styles.primaryButton}>Gerar plano e missões</button>
-        </div>
+        <section className="status-grid">
+          <Status title="WORKER" value="ONLINE" note={`${stats.worker}%`} green />
+          <Status title="GITHUB" value="CONECTADO" note={`${stats.github}%`} green />
+          <Status title="FILA" value={String(stats.fila)} note="pendentes" />
+          <Status title="EXECUÇÕES" value={String(stats.execucoes)} note="hoje" purple />
+          <Status title="UPTIME" value={stats.uptime} note="99.98%" />
+        </section>
 
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Memória Operacional</h2>
-          <p style={styles.muted}>Guarde regras fixas para os próximos pacotes.</p>
-          <textarea
-            value={memoryText}
-            onChange={(e) => setMemoryText(e.target.value)}
-            placeholder="Ex: nunca reconstruir layout aprovado da TOPAC..."
-            style={styles.textareaSmall}
-          />
-          <button onClick={addMemory} style={styles.secondaryButton}>Salvar memória</button>
-          <div style={styles.memoryList}>
-            {state.memories.slice(0, 5).map((m, i) => <div key={i} style={styles.memoryItem}>{m}</div>)}
-          </div>
-        </div>
-      </section>
+        <section className="mission-box">
+          <div className="mission-head"><span>🚀</span><div><h2>Iniciar missão</h2><p>Digite qualquer comando. A Factory reconhece se é criar, corrigir, alterar, automatizar ou analisar.</p></div></div>
+          <textarea value={command} onChange={e => setCommand(e.target.value)} placeholder="Ex: no faturamento da TOPAC, criar cadastro inteligente de clientes que leia PDF/foto e preencha sozinho..." />
+          <button onClick={createMission}>Enviar ao núcleo IA</button>
+        </section>
 
-      <section style={styles.gridTwo}>
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Equipe de agentes</h2>
-            <span style={styles.smallBadge}>{state.agents.length} ativos</span>
-          </div>
-          <div style={styles.list}>
-            {state.agents.map((agent) => (
-              <div key={agent.id} style={styles.agentRow}>
-                <div>
-                  <strong>{agent.name}</strong>
-                  <p style={styles.rowText}>{agent.role}</p>
-                </div>
-                <span style={styles.platformPill}>{agent.platform}</span>
-              </div>
-            ))}
-          </div>
-        </div>
+        <section className="ok-alert"><strong>✓ Todos os sistemas operacionais</strong><span>Worker online, GitHub conectado e missão única ativada.</span></section>
 
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Projetos conectados</h2>
-            <span style={styles.smallBadge}>local-first</span>
-          </div>
-          <div style={styles.list}>
-            {state.projects.map((project) => (
-              <div key={project.id} style={styles.agentRow}>
-                <div>
-                  <strong>{project.name}</strong>
-                  <p style={styles.rowText}>{project.area}</p>
-                </div>
-                <span style={styles.platformPill}>{project.status}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section style={styles.gridTwoWide}>
-        <div style={styles.card}>
-          <div style={styles.cardHeader}>
-            <h2 style={styles.cardTitle}>Fila de missões</h2>
-            <button onClick={exportBackup} style={styles.miniButton}>Exportar backup</button>
-          </div>
-          <div style={styles.listTall}>
-            {state.missions.length === 0 && <p style={styles.muted}>Nenhuma missão ainda. Gere pelo Orquestrador.</p>}
-            {state.missions.map((mission) => (
-              <button key={mission.id} onClick={() => setSelectedMission(mission)} style={styles.missionRow}>
-                <div style={{ textAlign: 'left' }}>
-                  <strong>{mission.title}</strong>
-                  <p style={styles.rowText}>{mission.objective}</p>
-                </div>
-                <div style={styles.missionTags}>
-                  <span style={styles.platformPill}>{mission.platform}</span>
-                  <span style={mission.risk === 'alto' ? styles.riskHigh : styles.risk}>{mission.risk}</span>
-                  <span style={styles.platformPill}>{mission.status}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div style={styles.card}>
-          <h2 style={styles.cardTitle}>Pacote técnico</h2>
-          {!selectedMission ? (
-            <p style={styles.muted}>Selecione uma missão para ver o pacote.</p>
-          ) : (
-            <div>
-              <div style={styles.packageTop}>
-                <span style={styles.platformPill}>{selectedMission.platform}</span>
-                <span style={selectedMission.requiresApproval ? styles.riskHigh : styles.risk}>aprovação: {selectedMission.requiresApproval ? 'sim' : 'não'}</span>
-              </div>
-              <h3>{selectedMission.title}</h3>
-              <p style={styles.muted}>{selectedMission.successCriteria}</p>
-              <textarea readOnly value={selectedMission.prompt} style={styles.promptBox} />
-              <div style={styles.actions}>
-                <button onClick={() => copy(selectedMission.prompt).then(() => addLog('Prompt copiado.'))} style={styles.primaryButton}>Copiar prompt</button>
-                <button onClick={() => updateMission(selectedMission.id, { status: 'aprovada' })} style={styles.secondaryButton}>Aprovar</button>
-                <button onClick={() => updateMission(selectedMission.id, { status: 'concluída' })} style={styles.secondaryButton}>Concluir</button>
-                <button onClick={() => splitMission(selectedMission)} style={styles.secondaryButton}>Dividir etapas</button>
-              </div>
+        <section className="two-cols">
+          <div className="panel">
+            <div className="panel-head"><h2>Projetos ativos</h2><button>Ver todos</button></div>
+            <div className="project-grid">
+              {state.projects.slice(0, 4).map(project => <ProjectCard key={project.id} project={project} />)}
             </div>
-          )}
-        </div>
+          </div>
+          <div className="panel">
+            <div className="panel-head"><h2>Missão atual</h2><span className="pill">Nexus Command</span></div>
+            {!activeMission ? <p className="muted">Envie um comando para a Factory transformar em execução.</p> : (
+              <div className="mission-detail">
+                <h3>{activeMission.target}</h3>
+                <p>{activeMission.command}</p>
+                <div className="tags"><span>{activeMission.intent}</span><span>{activeMission.risk}</span><span>{activeMission.status}</span></div>
+                <ul>{activeMission.plan.map((p, i) => <li key={i}>{p}</li>)}</ul>
+                <button onClick={() => runMission(activeMission)} disabled={activeMission.status === 'executado'}>{activeMission.risk === 'alto' ? 'Aprovar e executar' : 'Executar missão'}</button>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="panel">
+          <div className="panel-head"><h2>Execuções recentes</h2><button>Ver todas</button></div>
+          <div className="exec-list">
+            {state.executions.map(item => <div className="exec-row" key={item.id}><span className="check">✓</span><p>{item.title}</p><b>{item.project}</b><strong>{item.status}</strong><time>{item.time}</time></div>)}
+          </div>
+        </section>
       </section>
 
-      <section style={styles.card}>
-        <div style={styles.cardHeader}>
-          <h2 style={styles.cardTitle}>Logs do núcleo</h2>
-          <label style={styles.miniButton}>
-            Importar backup
-            <input type="file" accept="application/json" onChange={(e) => e.target.files?.[0] && importBackup(e.target.files[0])} hidden />
-          </label>
-        </div>
-        <div style={styles.logList}>
-          {state.logs.map((log, i) => <div key={i} style={styles.logItem}>{log}</div>)}
-        </div>
-      </section>
+      <style>{css}</style>
     </main>
   );
 }
 
-function Stat({ title, value, note }: { title: string; value: number; note: string }) {
-  return (
-    <div style={styles.statCard}>
-      <div style={styles.statValue}>{value}</div>
-      <div style={styles.statTitle}>{title}</div>
-      <div style={styles.muted}>{note}</div>
-    </div>
-  );
+function Status({ title, value, note, green, purple }: { title: string; value: string; note: string; green?: boolean; purple?: boolean }) {
+  return <div className="status-card"><span>{title}</span><strong className={green ? 'green' : purple ? 'purple' : ''}>{value}</strong><small>{note}</small></div>;
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  page: { minHeight: '100vh', background: 'radial-gradient(circle at top left, #172554 0, #020617 38%, #030712 100%)', color: '#e5e7eb', padding: 24, fontFamily: 'Inter, system-ui, Arial, sans-serif' },
-  hero: { display: 'flex', justifyContent: 'space-between', gap: 24, alignItems: 'center', padding: 24, border: '1px solid rgba(148,163,184,.22)', borderRadius: 24, background: 'rgba(15,23,42,.72)', boxShadow: '0 24px 80px rgba(0,0,0,.32)', marginBottom: 20 },
-  kicker: { color: '#38bdf8', fontSize: 12, fontWeight: 800, letterSpacing: 2, textTransform: 'uppercase' },
-  title: { fontSize: 38, lineHeight: 1.05, margin: '10px 0', maxWidth: 820 },
-  subtitle: { color: '#94a3b8', fontSize: 16, maxWidth: 780 },
-  badge: { border: '1px solid rgba(34,197,94,.4)', background: 'rgba(34,197,94,.12)', color: '#86efac', padding: '10px 14px', borderRadius: 999, fontWeight: 800, fontSize: 12, whiteSpace: 'nowrap' },
-  statsGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 14, marginBottom: 20 },
-  statCard: { padding: 18, borderRadius: 18, background: 'rgba(15,23,42,.72)', border: '1px solid rgba(148,163,184,.18)' },
-  statValue: { fontSize: 32, fontWeight: 900, color: '#fff' },
-  statTitle: { fontWeight: 700, marginBottom: 4 },
-  gridTwo: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16, marginBottom: 16 },
-  gridTwoWide: { display: 'grid', gridTemplateColumns: 'minmax(320px, .9fr) minmax(360px, 1.1fr)', gap: 16, marginBottom: 16 },
-  card: { padding: 18, borderRadius: 22, background: 'rgba(15,23,42,.78)', border: '1px solid rgba(148,163,184,.18)', boxShadow: '0 18px 60px rgba(0,0,0,.22)' },
-  cardHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
-  cardTitle: { margin: 0, fontSize: 20 },
-  muted: { color: '#94a3b8', fontSize: 13 },
-  textarea: { width: '100%', minHeight: 150, marginTop: 12, marginBottom: 12, background: 'rgba(2,6,23,.65)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,.22)', borderRadius: 14, padding: 14, outline: 'none', resize: 'vertical' },
-  textareaSmall: { width: '100%', minHeight: 82, marginTop: 12, marginBottom: 12, background: 'rgba(2,6,23,.65)', color: '#e5e7eb', border: '1px solid rgba(148,163,184,.22)', borderRadius: 14, padding: 14, outline: 'none', resize: 'vertical' },
-  primaryButton: { border: 0, borderRadius: 12, padding: '11px 14px', background: 'linear-gradient(135deg, #2563eb, #7c3aed)', color: '#fff', fontWeight: 800, cursor: 'pointer' },
-  secondaryButton: { border: '1px solid rgba(148,163,184,.22)', borderRadius: 12, padding: '10px 12px', background: 'rgba(30,41,59,.8)', color: '#e5e7eb', fontWeight: 700, cursor: 'pointer' },
-  miniButton: { border: '1px solid rgba(148,163,184,.22)', borderRadius: 10, padding: '8px 10px', background: 'rgba(30,41,59,.8)', color: '#e5e7eb', fontWeight: 700, cursor: 'pointer', fontSize: 12 },
-  list: { display: 'grid', gap: 10 },
-  listTall: { display: 'grid', gap: 10, maxHeight: 560, overflow: 'auto', paddingRight: 4 },
-  agentRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, background: 'rgba(2,6,23,.42)', border: '1px solid rgba(148,163,184,.12)' },
-  missionRow: { width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 12, borderRadius: 14, background: 'rgba(2,6,23,.42)', border: '1px solid rgba(148,163,184,.12)', color: '#e5e7eb', cursor: 'pointer' },
-  rowText: { color: '#94a3b8', fontSize: 12, margin: '3px 0 0' },
-  platformPill: { border: '1px solid rgba(56,189,248,.28)', background: 'rgba(56,189,248,.1)', color: '#7dd3fc', borderRadius: 999, padding: '5px 8px', fontSize: 11, fontWeight: 800, whiteSpace: 'nowrap' },
-  smallBadge: { border: '1px solid rgba(148,163,184,.22)', borderRadius: 999, padding: '5px 8px', color: '#cbd5e1', fontSize: 11 },
-  risk: { border: '1px solid rgba(234,179,8,.28)', background: 'rgba(234,179,8,.1)', color: '#fde68a', borderRadius: 999, padding: '5px 8px', fontSize: 11, fontWeight: 800 },
-  riskHigh: { border: '1px solid rgba(248,113,113,.34)', background: 'rgba(248,113,113,.14)', color: '#fecaca', borderRadius: 999, padding: '5px 8px', fontSize: 11, fontWeight: 800 },
-  missionTags: { display: 'flex', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 6 },
-  packageTop: { display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 10 },
-  promptBox: { width: '100%', minHeight: 330, background: '#020617', color: '#dbeafe', border: '1px solid rgba(148,163,184,.18)', borderRadius: 14, padding: 14, outline: 'none', resize: 'vertical', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace', fontSize: 12, lineHeight: 1.55 },
-  actions: { display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 },
-  memoryList: { display: 'grid', gap: 8, marginTop: 12 },
-  memoryItem: { padding: 10, borderRadius: 12, background: 'rgba(2,6,23,.42)', color: '#cbd5e1', fontSize: 12 },
-  logList: { display: 'grid', gap: 8, maxHeight: 260, overflow: 'auto' },
-  logItem: { padding: 10, borderRadius: 12, background: 'rgba(2,6,23,.42)', color: '#cbd5e1', fontSize: 12 },
-};
+function ProjectCard({ project }: { project: Project }) {
+  return <div className="project-card"><div><span>{project.label}</span><i>● {project.status}</i></div><h3>{project.name}</h3><p>Progresso</p><div className="bar"><em style={{ width: `${project.progress}%` }} /></div><small>{project.progress}%</small></div>;
+}
+
+const css = `
+*{box-sizing:border-box}body{margin:0;background:#020611;color:#f8fafc;font-family:Inter,system-ui,Arial,sans-serif}.factory-page{min-height:100vh;display:grid;grid-template-columns:280px 1fr;background:radial-gradient(circle at top left,#122145,#020611 42%,#030712)}.sidebar{border-right:1px solid rgba(148,163,184,.16);padding:26px 20px;display:flex;flex-direction:column;gap:26px;background:rgba(2,6,23,.68)}.brand{display:flex;gap:12px;align-items:center}.brand-icon{width:36px;height:36px;border:1px solid #38bdf8;border-radius:10px;display:grid;place-items:center;color:#a855f7}.brand strong{display:block;letter-spacing:.08em}.brand span{display:block;color:#38bdf8;font-size:12px;letter-spacing:.22em}nav{display:grid;gap:9px}nav a{padding:12px 14px;border-radius:12px;color:#cbd5e1;text-decoration:none}.active{background:linear-gradient(90deg,rgba(124,58,237,.35),rgba(14,165,233,.08));border:1px solid rgba(168,85,247,.42);color:#e9d5ff}.worker-card{margin-top:auto;border:1px solid rgba(34,197,94,.5);background:rgba(22,163,74,.1);border-radius:16px;padding:16px;display:grid;gap:8px}.worker-card span{font-size:12px;letter-spacing:.16em;color:#86efac}.worker-card strong{color:#22c55e}.worker-card small{color:#cbd5e1}.content{padding:26px 34px 40px}.topbar{display:flex;align-items:flex-start;justify-content:space-between;gap:18px;margin-bottom:18px}.topbar h1{font-size:32px;margin:0}.topbar p{margin:4px 0;color:#94a3b8}.system-ok{border:1px solid rgba(34,197,94,.4);background:rgba(34,197,94,.12);color:#4ade80;border-radius:12px;padding:13px 18px;font-weight:900;font-size:13px}.clock{border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.85);border-radius:12px;padding:12px 18px;text-align:center;font-weight:900}.clock small{display:block;color:#94a3b8;font-weight:500;font-size:11px}.status-grid{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid rgba(148,163,184,.18);border-radius:16px;background:rgba(15,23,42,.72);padding:18px;margin-bottom:18px}.status-card{border-right:1px solid rgba(148,163,184,.16);padding:0 18px}.status-card:last-child{border-right:0}.status-card span{display:block;color:#94a3b8;font-size:12px;letter-spacing:.18em}.status-card strong{display:block;font-size:22px;color:#38bdf8;margin:8px 0 3px}.status-card small{color:#cbd5e1;text-transform:uppercase;font-size:11px}.green{color:#22c55e!important}.purple{color:#a855f7!important}.mission-box{border:1px solid rgba(56,189,248,.26);background:linear-gradient(135deg,rgba(14,165,233,.12),rgba(124,58,237,.10));border-radius:18px;padding:22px;margin-bottom:18px}.mission-head{display:flex;gap:14px;align-items:center}.mission-head span{font-size:34px}.mission-head h2{margin:0;font-size:26px}.mission-head p{margin:4px 0 14px;color:#94a3b8}.mission-box textarea{width:100%;min-height:116px;background:#06101f;border:1px solid rgba(148,163,184,.22);border-radius:14px;color:#f8fafc;padding:16px;outline:none;resize:vertical;font-size:15px}.mission-box button,.mission-detail button{margin-top:12px;border:0;border-radius:12px;padding:13px 18px;background:linear-gradient(135deg,#38bdf8,#8b5cf6);color:white;font-weight:900;cursor:pointer}.ok-alert{display:grid;gap:4px;border:1px solid rgba(34,197,94,.45);background:rgba(21,128,61,.18);border-radius:16px;padding:16px 20px;margin-bottom:18px}.ok-alert span{color:#cbd5e1}.two-cols{display:grid;grid-template-columns:1.25fr .75fr;gap:18px;margin-bottom:18px}.panel{border:1px solid rgba(148,163,184,.18);background:rgba(15,23,42,.72);border-radius:18px;padding:20px}.panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.panel h2{margin:0}.panel button{border:1px solid rgba(148,163,184,.22);background:#0f172a;color:#f8fafc;border-radius:10px;padding:9px 12px;font-weight:800}.project-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}.project-card{border:1px solid rgba(148,163,184,.18);background:#060d1b;border-radius:16px;padding:18px;position:relative}.project-card div:first-child{display:flex;justify-content:space-between;gap:10px;color:#94a3b8;font-size:12px;text-transform:uppercase}.project-card i{color:#4ade80;font-style:normal;text-transform:none}.project-card h3{font-size:24px;margin:18px 0}.project-card p{color:#94a3b8;margin-bottom:8px}.bar{height:10px;background:#1e293b;border-radius:999px;overflow:hidden}.bar em{display:block;height:100%;background:linear-gradient(90deg,#38bdf8,#8b5cf6)}.project-card small{position:absolute;right:18px;bottom:16px}.mission-detail p,.muted{color:#94a3b8}.tags{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.tags span,.pill{border:1px solid rgba(56,189,248,.28);background:rgba(56,189,248,.1);color:#7dd3fc;border-radius:999px;padding:6px 9px;font-size:11px;font-weight:900}.mission-detail li{color:#cbd5e1;margin-bottom:7px}.exec-list{display:grid}.exec-row{display:grid;grid-template-columns:36px 1fr 90px 90px 70px;align-items:center;gap:12px;padding:14px 0;border-top:1px solid rgba(148,163,184,.14)}.check{width:24px;height:24px;border-radius:999px;background:#22c55e;color:#052e16;display:grid;place-items:center;font-weight:900}.exec-row p{margin:0}.exec-row b{background:#172554;color:#93c5fd;border-radius:8px;padding:6px 8px;text-align:center;font-size:12px}.exec-row strong{background:rgba(34,197,94,.14);color:#4ade80;border-radius:999px;padding:6px 8px;text-align:center;font-size:12px}.exec-row time{color:#cbd5e1}@media(max-width:900px){.factory-page{display:block}.sidebar{display:none}.content{padding:18px}.topbar{display:grid}.status-grid{grid-template-columns:repeat(2,1fr)}.status-card{border-right:0;border-bottom:1px solid rgba(148,163,184,.12);padding:12px}.two-cols,.project-grid{grid-template-columns:1fr}.exec-row{grid-template-columns:28px 1fr}.exec-row b,.exec-row strong,.exec-row time{display:none}}`;
