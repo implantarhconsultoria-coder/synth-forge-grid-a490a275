@@ -127,7 +127,7 @@ function CommandCenter() {
       </section>
 
       {/* QUICK ACTIONS */}
-      <section className="grid grid-cols-2 gap-3 sm:grid-cols-5 sm:gap-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         {quickActions.map((a) => {
           const Icon = a.icon;
           const cls = a.primary
