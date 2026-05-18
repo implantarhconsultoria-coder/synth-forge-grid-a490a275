@@ -41,14 +41,22 @@ export function AppShell() {
         }`}
       >
         <div className="h-full flex flex-col bg-[#050b18] border-r border-primary/20 shadow-[12px_0_60px_rgba(0,0,0,0.6)]">
-          <div className="px-5 py-5 border-b border-border/60">
-            <Link to="/" className="flex items-center gap-3">
-              <div className="relative size-9 rounded-lg bg-gradient-primary grid place-items-center glow-border">
-                <Sparkles className="size-5 text-primary-foreground" />
+          <div className="px-5 py-6 border-b border-border/60">
+            <Link to="/" className="flex flex-col items-center gap-2 text-center">
+              <div className="relative w-full max-w-[180px] aspect-square rounded-2xl bg-gradient-to-br from-primary/15 to-accent/15 grid place-items-center glow-border overflow-hidden">
+                <img
+                  src={aiFactoryLogo}
+                  alt="AI Factory"
+                  width={1024}
+                  height={1024}
+                  className="w-full h-full object-contain p-2"
+                />
               </div>
-              <div>
-                <div className="font-semibold tracking-tight leading-none">AI FACTORY</div>
-                <div className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground mt-1">
+              <div className="mt-1">
+                <div className="font-black tracking-[0.18em] text-base leading-none bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  AI FACTORY
+                </div>
+                <div className="text-[9px] uppercase tracking-[0.32em] text-muted-foreground mt-1.5">
                   ImplantaRH PRO
                 </div>
               </div>
