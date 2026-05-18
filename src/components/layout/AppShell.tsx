@@ -116,11 +116,10 @@ export function AppShell() {
           <div className="ml-auto flex items-center gap-3">
             <button
               onClick={() => setPaletteOpen(true)}
-              className="hidden md:flex items-center gap-2 rounded-md glass px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="hidden md:flex items-center gap-2 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               title="Buscar / executar (⌘K)"
             >
-              <kbd className="font-mono">⌘</kbd>
-              <kbd className="font-mono">K</kbd>
+              <Search className="size-3.5" />
               <span>Buscar / executar</span>
             </button>
             <button
@@ -128,14 +127,14 @@ export function AppShell() {
                 await factoryData.refresh();
                 toast.success("Dados atualizados");
               }}
-              className="flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
               title="Atualizar dados"
             >
               <RefreshCw className="size-3.5" />
               <span className="hidden sm:inline">Atualizar</span>
             </button>
-            <div className="hidden sm:flex items-center gap-1.5 rounded-md glass px-2.5 py-1.5 text-xs font-mono text-foreground">
-              <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 text-xs font-mono text-success">
+              <Clock className="size-3.5" />
               {now.toLocaleTimeString("pt-BR")}
             </div>
             <div className="size-8 rounded-full bg-gradient-primary grid place-items-center text-xs font-semibold text-primary-foreground">
