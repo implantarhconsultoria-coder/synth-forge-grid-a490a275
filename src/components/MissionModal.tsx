@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { factoryData } from "@/lib/factory-data";
+import { notify } from "@/lib/notifications";
+import { factorySettings } from "@/lib/factory-settings";
 import { toast } from "sonner";
 import { Rocket, Loader2 } from "lucide-react";
 
 export function MissionModal({ open, onOpenChange }: { open: boolean; onOpenChange: (v: boolean) => void }) {
   const [title, setTitle] = useState("");
   const [objective, setObjective] = useState("");
-  const [project, setProject] = useState("AI FACTORY");
+  const [project, setProject] = useState(() => factorySettings.get().defaultProject || "AI FACTORY");
   const [loading, setLoading] = useState(false);
   const projects = factoryData.getProjects();
 
@@ -20,6 +22,10 @@ export function MissionModal({ open, onOpenChange }: { open: boolean; onOpenChan
     try {
       await factoryData.createExecutionMission({ title: title.trim(), objective: objective.trim(), project });
       toast.success("Missão enviada ao núcleo IA");
+      void notify("mission_queued", title.trim());
+      if (factorySettings.get().safeMode && /senha|login|permiss|banco|supabase|financeiro|pagamento|exclu/i.test(`${title} ${objective}`)) {
+        void notify("mission_needs_approval", title.trim());
+      }
       setTitle(""); setObjective("");
       onOpenChange(false);
     } catch {
