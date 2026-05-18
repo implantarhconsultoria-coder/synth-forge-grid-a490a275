@@ -40,7 +40,7 @@ const initialState: AppState = {
     { id: uid(), title: 'core(factory): autopilot pro + watchdog', project: 'FACTORY', status: 'sucesso', time: 'recente' },
     { id: uid(), title: 'squad(factory): agentes operacionais', project: 'FACTORY', status: 'sucesso', time: 'recente' },
   ],
-  logs: ['Modo missão única ativado', 'Worker operacional', 'GitHub conectado', 'Autopilot PRO pronto'],
+  logs: ['Modo missão única ativado', 'Worker operacional', 'GitHub conectado', 'Autopilot PRO pronto', 'Ciclo de resultado preparado'],
 };
 
 function loadState(): AppState {
@@ -141,7 +141,7 @@ export default function App() {
       ...prev,
       missions: prev.missions.map(m => m.id === mission.id ? updated : m),
       executions: [execution, ...prev.executions].slice(0, 12),
-      logs: [`Execução registrada · ${mission.target}`, ...prev.logs].slice(0, 80),
+      logs: [`Execução registrada · ${mission.target}`, `Resultado gerado · ${mission.target} · verifique execução recente`, ...prev.logs].slice(0, 80),
     }));
     setActiveMission(updated);
   };
