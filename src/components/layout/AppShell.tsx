@@ -150,7 +150,7 @@ export function AppShell() {
         </main>
 
         <footer className="px-4 lg:px-8 py-6 pb-24 lg:pb-6 text-xs text-muted-foreground border-t border-border/60">
-          AI FACTORY · Inteligência operacional by{" "}
+          AI FACTORY{" "}
           <span className="text-foreground">ImplantaRH ConsultoriaPRO Ltda.</span>
         </footer>
       </div>

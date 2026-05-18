@@ -56,8 +56,8 @@ function CommandCenter() {
   const quickActions: Array<{
     label: string; sub: string; icon: any; to?: string; onClick?: () => void; primary?: boolean;
   }> = [
-    { label: "Iniciar missão", sub: "Enviar ao núcleo IA", icon: Rocket, onClick: () => setMissionOpen(true), primary: true },
-    { label: "Ver fila", sub: "Missões enfileiradas", icon: ListChecks, to: "/queue" },
+    { label: "Missão", sub: "Enviar ao núcleo IA", icon: Rocket, onClick: () => setMissionOpen(true), primary: true },
+    { label: "Fila", sub: "Missões enfileiradas", icon: ListChecks, to: "/queue" },
     { label: "Logs", sub: "Eventos ao vivo", icon: Activity, to: "/logs" },
     { label: "Configurações", sub: "Worker · Notificações", icon: SettingsIcon, to: "/settings" },
   ];
