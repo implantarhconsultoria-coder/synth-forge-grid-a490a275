@@ -24,11 +24,19 @@ export interface Project {
 export interface SmartLog {
   id: string;
   projectId: string | null;
+  projectName?: string;
   type: "system" | "monitor" | "forge" | "doctor" | "connect" | "voice";
   level: "info" | "ok" | "warn" | "error";
   message: string;
   createdAt: string;
   source: DataSource;
+  durationMs?: number;
+  metadataDetails?: {
+    prompt?: string;
+    response?: string;
+    stackTrace?: string;
+    [key: string]: unknown;
+  };
 }
 
 export interface Integration {
