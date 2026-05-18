@@ -155,6 +155,7 @@ export function AppShell() {
       </div>
       <MobileBottomNav />
       <FactoryFab />
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }
