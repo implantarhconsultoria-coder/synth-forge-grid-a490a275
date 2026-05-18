@@ -65,11 +65,27 @@ export function MissionCycle() {
 
   async function createReal() {
     if (!diag) return;
-    const objective = diag.realCommand || `AUDITORIA REAL — ${diag.headline}`;
+    // INTERCEPTADOR: aplica escopo rígido do módulo antes de despachar
+    const scoped = buildScopedMission(prompt);
+    const objective = `${diag.realCommand || `AUDITORIA REAL — ${diag.headline}`}\n\n${scoped.finalPrompt}`;
     try {
-      await factoryData.createExecutionMission({ title: diag.headline, objective });
-      notify({ kind: "mission_created", title: "Missão real criada", body: diag.headline });
-      factoryData.addLog({ type: "system", level: "ok", message: `Missão real enviada à fila: ${diag.headline}` });
+      await factoryData.createExecutionMission({
+        title: `[${scoped.module.name}] ${diag.headline}`,
+        objective,
+        project: scoped.project,
+      });
+      notify({ kind: "mission_created", title: "Missão real criada", body: `${scoped.module.name} · ${diag.headline}` });
+      factoryData.addLog({
+        type: "system",
+        level: "ok",
+        module: scoped.module.name,
+        projectName: scoped.project,
+        message: `Missão real enviada à fila: ${diag.headline}`,
+        metadataDetails: {
+          prompt: scoped.finalPrompt,
+          response: `Arquivos: ${scoped.targetFiles.join(", ") || "—"}\nTabelas: ${scoped.databaseTables.join(", ") || "—"}`,
+        },
+      });
     } catch (e: any) {
       setError(e?.message || "Falha ao criar missão");
     }
