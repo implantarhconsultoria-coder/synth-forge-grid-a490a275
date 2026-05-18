@@ -371,15 +371,18 @@ export const factoryData = {
     const log: SmartLog = {
       id: uid(),
       projectId: input.projectId ?? null,
+      projectName: input.projectName,
+      module: input.module,
       type: input.type ?? "system",
       level: input.level ?? "info",
       message: input.message,
       createdAt: now(),
       source: "mock",
+      durationMs: input.durationMs,
+      metadataDetails: input.metadataDetails,
     };
     const list = readLS<SmartLog>(LS_KEYS.logs);
     writeLS(LS_KEYS.logs, [log, ...list]);
-    // tentativa silenciosa de persistir no Supabase
     void supabaseApi.insertSmartLog({
       message: log.message,
       level: log.level,
