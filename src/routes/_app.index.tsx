@@ -81,20 +81,11 @@ function CommandCenter() {
             <div className="absolute inset-0 blur-3xl bg-gradient-to-br from-primary/30 to-accent/30 rounded-full" />
             <img
               src={aiFactoryLogo}
-              alt="AI Factory"
+              alt="AI Factory · Inteligência Operacional · ImplantaRH"
               width={1024}
               height={1024}
-              className="relative w-44 sm:w-56 lg:w-64 aspect-square object-contain drop-shadow-[0_0_40px_rgba(139,92,246,0.5)]"
+              className="relative w-56 sm:w-72 lg:w-80 aspect-square object-contain rounded-3xl drop-shadow-[0_0_60px_rgba(139,92,246,0.45)]"
             />
-          </div>
-
-          <div className="space-y-2">
-            <div className="font-black tracking-[0.32em] text-2xl sm:text-3xl lg:text-4xl bg-gradient-to-r from-primary via-white to-accent bg-clip-text text-transparent">
-              AI FACTORY
-            </div>
-            <div className="text-[10px] sm:text-xs uppercase tracking-[0.5em] text-muted-foreground">
-              ImplantaRH PRO
-            </div>
           </div>
 
           <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
