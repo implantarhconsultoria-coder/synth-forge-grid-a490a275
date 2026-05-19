@@ -46,14 +46,12 @@ export function AppShell() {
         }`}
       >
         <div className="h-full flex flex-col bg-[#050b18] border-r border-primary/20 shadow-[12px_0_60px_rgba(0,0,0,0.6)]">
-          <div className="px-2 pt-4 pb-2">
+          <div className="px-6 pt-6 pb-4 flex justify-center">
             <Link to="/" className="block">
               <img
                 src={aiFactoryLogo}
                 alt="AI Factory · ImplantaRH"
-                width={1024}
-                height={1024}
-                className="w-full h-auto bg-transparent"
+                className="w-32 h-32 object-contain"
                 style={{ background: "transparent" }}
               />
             </Link>
