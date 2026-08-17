@@ -9,10 +9,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "factory": "node factory-worker/index.mjs",
-    "factory:start": "node factory-worker/index.mjs",
-    "factory:logs": "tail -f factory-worker.log"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@cloudflare/vite-plugin": "^1.40.2",
